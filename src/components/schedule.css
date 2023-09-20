@@ -1,0 +1,86 @@
+  /* Calendar */
+  .rbc-calendar {
+    border-radius: 10px;
+    overflow: hidden;
+    background: none; /* Remove the default white background */
+}
+
+.rbc-btn-group {
+    color: var(--mainBlue);
+    transition: color 0.2s;
+}
+
+.rbc-btn-group button:active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Removing the background grid */
+.rbc-time-header-content {
+    background-color: transparent !important;
+}
+.rbc-header { 
+    font-size: 0.8em; /* Reduce font size */
+    font-weight: normal; /* Normal font weight */
+}
+
+.rbc-day-bg {
+    display: none; /* Hide the background grid */
+}
+.rbc-timeslot-group {
+    border: none !important;
+}
+/* Hides the gutter and its container */
+.rbc-time-gutter, .rbc-time-gutter *, .rbc-time-content .rbc-time-gutter {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+}
+/* Hide the identified elements */
+.rbc-time-header-content, .rbc-label.rbc-time-header-gutter {
+    display: none !important;
+}
+
+.rbc-today {
+    background-color: transparent; /* Make today's background transparent */
+    font-weight: bold; /* Keeping the font bold */
+    color: var(--mainBlue); /* Make the text color more noticeable */
+}
+
+.rbc-event {
+    background-color: var(--mainBlue);
+    border-radius: 5px;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.2s;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.6);
+    padding: 5px;
+    font-weight: bold;  /* Make the text bolder */
+    font-size: 1.2em;  /* Increase the text size */
+    background-color: rgba(0, 0, 0, 0.5); /* Increase opacity for the background shadow */
+}
+
+.rbc-event:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+button {
+    background-color: rgba(0, 0, 0, 0.1);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    font-family: var(--future);
+    padding: 10px 20px;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+button:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
