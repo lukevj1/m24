@@ -1,0 +1,33 @@
+Standardised OLS, high-income countries, 2015-2019 averages (n=42)
+Outcome: suicide_per_100000_people
+
+                                OLS Regression Results                               
+=====================================================================================
+Dep. Variable:     suicide_per_100000_people   R-squared:                       0.613
+Model:                                   OLS   Adj. R-squared:                  0.546
+Method:                        Least Squares   F-statistic:                     9.334
+Date:                       Sat, 26 Sep 2026   Prob (F-statistic):           3.99e-06
+Time:                               15:34:48   Log-Likelihood:                -39.178
+No. Observations:                         42   AIC:                             92.36
+Df Residuals:                             35   BIC:                             104.5
+Df Model:                                  6                                         
+Covariance Type:                         HC3                                         
+=========================================================================================================
+                                            coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------------------------------
+const                                 -1.388e-17      0.113  -1.23e-16      1.000      -0.222       0.222
+aged_15plus_unemployment_rate_percent    -0.2804      0.146     -1.923      0.054      -0.566       0.005
+inequality_index_gini                     0.0025      0.159      0.016      0.987      -0.309       0.314
+poisonings_deaths_per_100000_people       0.5627      0.159      3.530      0.000       0.250       0.875
+urban_population_percent_of_total         0.0324      0.127      0.255      0.799      -0.217       0.282
+total_health_spending_percent_of_gdp      0.1551      0.152      1.019      0.308      -0.143       0.453
+median_age_years                          0.4842      0.208      2.327      0.020       0.076       0.892
+==============================================================================
+Omnibus:                       14.254   Durbin-Watson:                   2.027
+Prob(Omnibus):                  0.001   Jarque-Bera (JB):               16.124
+Skew:                           1.167   Prob(JB):                     0.000315
+Kurtosis:                       4.940   Cond. No.                         2.69
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC3)

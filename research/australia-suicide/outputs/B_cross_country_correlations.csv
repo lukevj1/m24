@@ -1,0 +1,59 @@
+indicator,name,group,n_countries,spearman_rho,p,australia_value,australia_percentile,q_fdr
+alcohol_consumption_per_adult_15plus_litres,Alcohol consumption per adult 15+ (litres),high_income,53,0.667,0.0,10.115,50.943,0.0
+median_age_years,Median age (years),high_income,53,0.601,0.0,36.333,37.736,0.0
+smoking_adults_percent_of_population_over_age_15,Smoking adults (% of population over age 15),high_income,50,0.521,0.0,15.9,18.0,0.001
+total_health_spending_percent_of_gdp,Total health spending (% of GDP),high_income,52,0.491,0.0,10.128,75.0,0.002
+medical_doctors_per_1000_people,Medical Doctors (per 1000 people),high_income,52,0.418,0.002,3.647,69.231,0.012
+inflation_annual_percent,Inflation (annual %),high_income,52,0.412,0.002,1.534,55.769,0.012
+aged_15plus_labour_force_participation_rate_percent,Aged 15+ labour force participation rate (%),high_income,51,-0.36,0.009,65.401,66.667,0.035
+age_at_1st_marriage_women,Age at 1st marriage (women),high_income,49,0.358,0.012,28.93,63.265,0.037
+hdi_human_development_index,Human Development Index (HDI),high_income,52,0.355,0.01,0.942,82.692,0.035
+democracy_score_use_as_color,Democracy score (use as color),high_income,45,0.32,0.032,10.0,40.0,0.088
+total_health_spending_per_person_international_dollar,Total health spending per person (international $),high_income,52,0.296,0.033,3290.667,71.154,0.088
+teen_fertility_rate_births_per_1000_women_ages_15_19,Teen fertility rate (births per 1000 women ages 15-19),high_income,52,-0.246,0.078,15.767,55.769,0.189
+poisonings_deaths_per_100000_people,"Poisonings, deaths (per 100 000 people)",high_income,53,0.237,0.087,0.098,18.868,0.195
+aged_15_24_unemployment_rate_percent,Aged 15-24 unemployment rate (%),high_income,52,-0.204,0.147,12.346,40.385,0.304
+population_density_per_square_km,Population density (per square km),high_income,53,-0.171,0.22,3.218,0.0,0.419
+gdp_per_capita_yearly_growth,"GDP/capita, yearly growth",high_income,53,0.167,0.231,1.678,54.717,0.419
+working_hours_per_week,Working hours per week,high_income,47,-0.159,0.286,33.304,4.255,0.487
+inequality_index_gini,Inequality index (Gini),high_income,42,-0.134,0.397,34.0,64.286,0.605
+males_aged_15plus_unemployment_rate_percent,"Unemployment rate (%), males aged 15+",high_income,53,0.121,0.39,5.539,49.057,0.605
+income_share_of_richest_10percent,Income share of richest 10%,high_income,42,-0.119,0.451,26.2,76.19,0.623
+urban_population_percent_of_total,Urban population (% of total),high_income,52,-0.109,0.44,87.11,71.154,0.623
+government_share_of_total_health_spending_percent,Govt. share of health spending (%),high_income,52,0.071,0.616,71.733,50.0,0.812
+murder_per_100000_people,Murders (per 100 000 people),high_income,53,-0.061,0.663,1.078,50.943,0.819
+body_mass_index_bmi_men_kgperm2,"Body Mass Index, men, BMI, kg/m2",high_income,52,-0.059,0.678,27.75,71.154,0.819
+out_of_pocket_share_of_total_health_spending_percent,Out-of-pocket total health spending share (%),high_income,52,-0.032,0.823,16.338,44.231,0.909
+long_term_unemployment_rate_percent,Long term unemployment rate (%),high_income,44,-0.03,0.847,1.168,43.182,0.909
+life_expectancy_at_birth_data_from_ihme,"Life expectancy at birth, data from IHME",high_income,52,0.028,0.846,81.589,90.385,0.909
+aged_15plus_unemployment_rate_percent,Aged 15+ unemployment rate (%),high_income,53,0.015,0.914,5.569,47.17,0.947
+gdppercapita_us_inflation_adjusted,"GDP/capita (US$, inflation-adjusted)",high_income,52,-0.003,0.984,58109.828,84.615,0.984
+alcohol_consumption_per_adult_15plus_litres,Alcohol consumption per adult 15+ (litres),all,180,0.477,0.0,10.115,76.667,0.0
+democracy_score_use_as_color,Democracy score (use as color),all,164,0.379,0.0,10.0,81.098,0.0
+median_age_years,Median age (years),all,185,0.345,0.0,36.333,76.216,0.0
+total_health_spending_percent_of_gdp,Total health spending (% of GDP),all,183,0.319,0.0,10.128,88.525,0.0
+out_of_pocket_share_of_total_health_spending_percent,Out-of-pocket total health spending share (%),all,183,-0.313,0.0,16.338,24.59,0.0
+medical_doctors_per_1000_people,Medical Doctors (per 1000 people),all,184,0.306,0.0,3.647,87.5,0.0
+total_health_spending_per_person_international_dollar,Total health spending per person (international $),all,179,0.306,0.0,3290.667,91.62,0.0
+age_at_1st_marriage_women,Age at 1st marriage (women),all,159,0.29,0.0,28.93,84.906,0.001
+smoking_adults_percent_of_population_over_age_15,Smoking adults (% of population over age 15),all,159,0.288,0.0,15.9,33.962,0.001
+government_share_of_total_health_spending_percent,Govt. share of health spending (%),all,183,0.283,0.0,71.733,80.874,0.0
+working_hours_per_week,Working hours per week,all,156,-0.277,0.0,33.304,5.769,0.001
+hdi_human_development_index,Human Development Index (HDI),all,182,0.274,0.0,0.942,95.055,0.001
+gdppercapita_us_inflation_adjusted,"GDP/capita (US$, inflation-adjusted)",all,183,0.239,0.001,58109.828,95.628,0.002
+teen_fertility_rate_births_per_1000_women_ages_15_19,Teen fertility rate (births per 1000 women ages 15-19),all,183,-0.216,0.003,15.767,21.858,0.007
+income_share_of_richest_10percent,Income share of richest 10%,all,161,-0.191,0.015,26.2,34.783,0.03
+body_mass_index_bmi_men_kgperm2,"Body Mass Index, men, BMI, kg/m2",all,182,0.156,0.035,27.75,87.912,0.064
+population_density_per_square_km,Population density (per square km),all,185,-0.149,0.043,3.218,1.081,0.074
+inequality_index_gini,Inequality index (Gini),all,161,-0.132,0.094,34.0,34.783,0.144
+gdp_per_capita_yearly_growth,"GDP/capita, yearly growth",all,185,-0.13,0.078,1.678,28.108,0.125
+murder_per_100000_people,Murders (per 100 000 people),all,185,-0.105,0.154,1.078,16.757,0.223
+long_term_unemployment_rate_percent,Long term unemployment rate (%),all,142,0.098,0.244,1.168,49.296,0.308
+males_aged_15plus_unemployment_rate_percent,"Unemployment rate (%), males aged 15+",all,179,0.091,0.225,5.539,51.397,0.308
+urban_population_percent_of_total,Urban population (% of total),all,184,0.088,0.234,87.11,88.043,0.308
+life_expectancy_at_birth_data_from_ihme,"Life expectancy at birth, data from IHME",all,184,0.06,0.418,81.589,97.283,0.505
+poisonings_deaths_per_100000_people,"Poisonings, deaths (per 100 000 people)",all,185,-0.041,0.575,0.098,5.946,0.667
+aged_15plus_labour_force_participation_rate_percent,Aged 15+ labour force participation rate (%),all,180,0.017,0.819,65.401,66.667,0.883
+aged_15plus_unemployment_rate_percent,Aged 15+ unemployment rate (%),all,181,0.017,0.822,5.569,47.514,0.883
+aged_15_24_unemployment_rate_percent,Aged 15-24 unemployment rate (%),all,175,-0.013,0.867,12.346,42.857,0.898
+inflation_annual_percent,Inflation (annual %),all,183,0.003,0.966,1.534,32.24,0.966

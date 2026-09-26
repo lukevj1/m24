@@ -1,0 +1,23 @@
+indicator,name,n_years,r_levels,p_levels,r_detrended,p_detrended,n_diffs,r_changes,p_changes,q_levels,q_detrended,q_changes
+population_density_per_square_km,Population density (per square km),22,0.649,0.001,0.782,0.0,21,0.324,0.152,0.008,0.0,0.788
+median_age_years,Median age (years),22,0.387,0.075,-0.778,0.0,21,-0.317,0.161,0.131,0.0,0.788
+life_expectancy_at_birth_data_from_ihme,"Life expectancy at birth, data from IHME",14,-0.44,0.115,-0.584,0.028,13,-0.39,0.188,0.152,0.066,0.788
+hdi_human_development_index,Human Development Index (HDI),22,0.522,0.013,-0.581,0.005,21,-0.049,0.831,0.032,0.03,0.873
+total_health_spending_percent_of_gdp,Total health spending (% of GDP),22,0.716,0.0,0.569,0.006,21,0.209,0.363,0.003,0.03,0.846
+long_term_unemployment_rate_percent,Long term unemployment rate (%),22,0.487,0.021,0.543,0.009,21,0.025,0.913,0.041,0.033,0.913
+males_aged_15plus_unemployment_rate_percent,"Unemployment rate (%), males aged 15+",22,0.354,0.106,0.541,0.009,21,-0.066,0.776,0.152,0.033,0.873
+aged_15plus_unemployment_rate_percent,Aged 15+ unemployment rate (%),22,0.331,0.133,0.524,0.012,21,-0.069,0.767,0.164,0.037,0.873
+gdppercapita_us_inflation_adjusted,"GDP/capita (US$, inflation-adjusted)",22,0.527,0.012,-0.474,0.026,21,0.062,0.788,0.032,0.066,0.873
+aged_15_24_unemployment_rate_percent,Aged 15-24 unemployment rate (%),22,0.494,0.019,0.46,0.031,21,-0.052,0.822,0.041,0.066,0.873
+poisonings_deaths_per_100000_people,"Poisonings, deaths (per 100 000 people)",22,-0.703,0.0,-0.446,0.038,21,-0.191,0.407,0.003,0.072,0.854
+body_mass_index_bmi_men_kgperm2,"Body Mass Index, men, BMI, kg/m2",17,0.248,0.338,-0.381,0.132,16,0.257,0.337,0.374,0.213,0.846
+aged_15plus_labour_force_participation_rate_percent,Aged 15+ labour force participation rate (%),22,0.307,0.164,-0.355,0.105,21,0.317,0.161,0.191,0.183,0.788
+murder_per_100000_people,Murders (per 100 000 people),22,-0.355,0.105,0.262,0.238,21,0.211,0.359,0.152,0.357,0.846
+urban_population_percent_of_total,Urban population (% of total),22,0.624,0.002,0.246,0.27,21,0.131,0.573,0.009,0.378,0.859
+working_hours_per_week,Working hours per week,21,-0.529,0.014,0.239,0.297,20,0.423,0.063,0.032,0.39,0.788
+out_of_pocket_share_of_total_health_spending_percent,Out-of-pocket total health spending share (%),22,-0.617,0.002,-0.219,0.328,21,-0.089,0.7,0.009,0.405,0.873
+inflation_annual_percent,Inflation (annual %),22,-0.349,0.112,-0.159,0.48,21,0.132,0.568,0.152,0.56,0.859
+gdp_per_capita_yearly_growth,"GDP/capita, yearly growth",20,-0.011,0.963,0.138,0.561,19,0.172,0.481,0.963,0.62,0.859
+government_share_of_total_health_spending_percent,Govt. share of health spending (%),22,0.099,0.662,-0.063,0.779,21,0.153,0.509,0.695,0.814,0.859
+medical_doctors_per_1000_people,Medical Doctors (per 1000 people),22,0.609,0.003,0.053,0.814,21,0.21,0.36,0.009,0.814,0.846
+democracy_score_use_as_color,Democracy score (use as color),19,,,,,18,,,,,
