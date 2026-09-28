@@ -31,10 +31,15 @@ def _engine(matched: bool):
     return [(dataclasses.replace(m, drift_slow=truth.drift_slow, drift_fast=truth.drift_fast), w) for m, w in eng]
 
 
+_POP: dict = {}
+
+
 def _one(args):
-    i, n, matched = args
+    i, n, matched, seed = args
     truth = get_model("truth-perturbed")
-    vp = make_population(n, truth, seed=2026)[i]
+    if (n, seed) not in _POP:
+        _POP[(n, seed)] = make_population(n, truth, seed=seed)
+    vp = _POP[(n, seed)][i]
     return trials.any_time(vp, truth, _engine(matched), np.random.default_rng(777 + i))
 
 
@@ -42,10 +47,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=300)
     ap.add_argument("--procs", type=int, default=mp.cpu_count())
+    ap.add_argument("--seed", type=int, default=4242)
     a = ap.parse_args()
     for matched in (False, True):
         with mp.Pool(a.procs) as pool:
-            res = pool.map(_one, [(i, a.n, matched) for i in range(a.n)], chunksize=4)
+            res = pool.map(_one, [(i, a.n, matched, a.seed) for i in range(a.n)], chunksize=4)
         e1 = np.median([abs(r["engine_med"] - r["truth12"]) for r in res])
         e2 = np.median([abs(r["hist_med"] - r["truth12"]) for r in res])
         label = "drift matched to truth" if matched else "engine's own drift"

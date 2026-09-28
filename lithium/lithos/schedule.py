@@ -72,6 +72,7 @@ class Context:
     last_level: float | None = None
     last_level_h: float | None = None
     last_bloods_h: float | None = None   # U&E/eGFR, TFT, calcium, weight
+    last_acr_h: float | None = None      # urine albumin:creatinine ratio
     pregnant_weeks: float | None = None  # gestational age now, if pregnant
     postpartum_days: float | None = None
     regular_nsaid: bool = False          # NICE: levels monthly until stable, then 3-monthly
@@ -134,7 +135,10 @@ def guideline_tasks(ctx: Context, now_h: float, guideline: str = "NICE") -> list
     if ctx.renal_or_thyroid_risk or ctx.raised_calcium:
         m = min(m, 3)
     tasks.append(Task(max(now_h, bloods_h + m * MONTH), "U&E + eGFR, TSH, calcium, weight/BMI",
-                      f"routine safety bloods every {m} months"))
+                      f"routine safety bloods every {m} months (NICE CG185)"))
+    acr_h = ctx.last_acr_h if ctx.last_acr_h is not None else ctx.start_h
+    tasks.append(Task(max(now_h, acr_h + 12 * MONTH), "urine albumin:creatinine ratio",
+                      "at least annually: needed for CKD staging and NICE NG203 referral criteria"))
     return tasks
 
 
@@ -176,19 +180,23 @@ class Plan:
 
 def plan(ctx: Context, now_h: float, *, post: Posterior | None = None,
          admins: Sequence[Administration] | None = None, guideline: str = "NICE",
+         target: tuple[float, float] = (0.6, 0.8),
          egfr_slope_per_year: float = 0.0, egfr_now: float | None = None) -> Plan:
     tasks = guideline_tasks(ctx, now_h, guideline)
     horizon, curve = None, []
+    # The watched band follows the clinician's target (e.g. 0.4-1.0 for 0.6-0.8; 0.6-1.2 for 0.8-1.0).
+    band = (max(0.3, target[0] - 0.2), target[1] + 0.2)
     if post is not None and admins and ctx.stable and ctx.pregnant_weeks is None:
-        horizon, curve = uncertainty_horizon(post, admins, now_h, egfr_slope_per_year=egfr_slope_per_year,
+        horizon, curve = uncertainty_horizon(post, admins, now_h, band=band, egfr_slope_per_year=egfr_slope_per_year,
                                              egfr_now=egfr_now)
         for tk in tasks:
             if tk.test == "lithium level" and now_h + horizon < tk.due_h:
                 tk.due_h = now_h + horizon
                 if horizon <= 0:
-                    tk.reason += "; DUE NOW: forecast risk of being outside 0.4-1.0 mmol/L already exceeds 10%"
+                    tk.reason += (f"; DUE NOW: forecast risk of being outside {band[0]:.1f}-{band[1]:.1f} mmol/L "
+                                  "already exceeds 10%")
                 else:
-                    tk.reason += (f"; brought forward: forecast risk of leaving 0.4-1.0 mmol/L exceeds 10% "
-                                  f"within ~{horizon / MONTH:.0f} month(s)")
+                    tk.reason += (f"; brought forward: forecast risk of leaving {band[0]:.1f}-{band[1]:.1f} mmol/L "
+                                  f"exceeds 10% within ~{horizon / MONTH:.0f} month(s)")
                 tk.priority = "soon"
     return Plan(sorted(tasks, key=lambda t: t.due_h), horizon, curve)

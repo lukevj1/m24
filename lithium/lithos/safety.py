@@ -50,65 +50,102 @@ def hours_to_below(post: Posterior, t: float, observed: float, threshold: float 
     return summarise(out, "h", 0)
 
 
+def aki(creatinine_baseline: float | None, creatinine_now: float | None, hours_apart: float | None = None) -> bool:
+    """KDIGO creatinine criteria: rise >= 26.5 umol/L within 48 h, or >= 1.5x baseline within 7 days."""
+    if not creatinine_baseline or not creatinine_now:
+        return False
+    if creatinine_now >= 1.5 * creatinine_baseline:
+        return hours_apart is None or hours_apart <= 7 * 24
+    return (creatinine_now - creatinine_baseline) >= 26.5 and (hours_apart is None or hours_apart <= 48)
+
+
 def triage(level: float, symptoms: set[str] | None = None, *, acute_ingestion: bool = False,
            egfr: float | None = None, kidney_impaired: bool | None = None,
+           creatinine_baseline: float | None = None, creatinine_now: float | None = None,
            post: Posterior | None = None, t: float | None = None) -> Triage:
-    """Illustrative triage. Level bands: the US label calls >= 1.5 mEq/L toxic
-    and > 3 potentially life-threatening; symptoms can start from ~1.2, and
-    neurotoxicity can occur at therapeutic levels (NICE), so symptoms override
-    the number. Chronic toxicity is more dangerous at a given level than acute.
+    """Illustrative triage, to be aligned with the local toxicology pathway.
+
+    Level bands: US labelling calls >= 1.5 mEq/L toxic and > 3 potentially
+    life-threatening; symptoms can start from ~1.2; neurotoxicity can occur at
+    therapeutic levels, so symptoms override the number. Chronic accumulation
+    is more dangerous at a given level than an acute ingestion. Fluid loss,
+    reduced kidney function and acute kidney injury escalate. EXTRIP criteria
+    apply to lithium poisoning, so they are only raised at toxic levels or
+    after an acute ingestion.
     """
     symptoms = {s.lower() for s in (symptoms or set())}
     severe, moderate, mild = symptoms & SEVERE, symptoms & MODERATE, symptoms & MILD
+    gi_losses = bool(symptoms & {"vomiting", "diarrhoea", "diarrhea"})
     actions: list[str] = []
     extrip: list[str] = []
     if kidney_impaired is None:
         kidney_impaired = egfr is not None and egfr < 60
+    acute_kidney = aki(creatinine_baseline, creatinine_now)
+    poisoning_context = level >= 1.5 or acute_ingestion
+    chronic = not acute_ingestion
 
-    if severe or level >= 2.5 or (moderate and level >= 1.5):
+    if severe:
         urgency = "emergency"
-        actions += ["Stop lithium. Emergency department now (ambulance if drowsy, confused or seizing).",
-                    "Discuss with toxicology / Poisons Information Centre (13 11 26 in Australia).",
+        actions.append("Severe neurological or cardiac symptoms: emergency department now. Lithium neurotoxicity "
+                       "can occur even at therapeutic levels, but look for other causes too.")
+    elif level >= 2.5 or (chronic and level >= 2.0) or (moderate and level >= 1.5):
+        urgency = "emergency"
+    elif moderate or level >= 1.5 or (level > 1.2 and (gi_losses or acute_kidney or (egfr is not None and egfr < 45))):
+        urgency = "same-day"
+    elif level > 1.2 or mild:
+        urgency = "review"
+    elif level > 1.0:
+        urgency = "review"
+    else:
+        urgency = "routine"
+
+    if urgency == "emergency" and not severe:
+        actions.append("Stop lithium. Emergency department now (ambulance if drowsy, confused or seizing).")
+    if urgency == "emergency":
+        actions += ["Discuss with toxicology / Poisons Information Centre (13 11 26 in Australia).",
                     "Urgent level (do not wait for a 12-h sample), U&E/creatinine, sodium, calcium, ECG; "
                     "isotonic fluids per toxicology advice; activated charcoal does not bind lithium; "
                     "serial levels because of rebound."]
-    elif moderate or level >= 1.5:
-        urgency = "same-day"
+    elif urgency == "same-day":
         actions += ["Withhold lithium. Same-day medical assessment.",
                     "Repeat level with U&E/creatinine within 24 h; look for the cause "
                     "(interaction, dehydration, renal decline, dose error)."]
-    elif level > 1.2 or mild:
-        urgency = "review"
+    elif urgency == "review" and (level > 1.2 or mild):
         actions += ["Withhold the next dose(s) pending review; repeat the level and U&E within 24-48 h.",
                     "Check for precipitants: new NSAID/ACE inhibitor/ARB/diuretic, vomiting or diarrhoea, "
                     "reduced intake, heat, fever, intercurrent illness."]
-    elif level > 1.0:
-        urgency = "review"
+    elif urgency == "review":
         actions += ["Above the usual maintenance ceiling: review dose and precipitants and repeat a level. "
                     "A single level above 1.0 was followed by a 4-5% fall in eGFR over 3 months in one "
                     "cohort (Kirkham 2014)."]
     else:
-        urgency = "routine"
         actions += ["No toxicity signal from the level alone; interpret with symptoms and trend "
                     "(neurotoxicity can occur at therapeutic levels)."]
+    if gi_losses and level > 1.0:
+        actions.append("Vomiting or diarrhoea: fluid loss drives accumulation; the level is likely to keep rising.")
+    if acute_kidney:
+        actions.append("Creatinine meets KDIGO acute kidney injury criteria: lithium clearance is falling; "
+                       "expect slower elimination than any baseline-based estimate.")
 
     if acute_ingestion:
         actions.append("Acute ingestion: early levels overstate brain exposure; follow toxicology protocol with "
                        "serial levels. Sustained-release products may need whole-bowel irrigation.")
 
-    # EXTRIP 2015 (Decker et al., CJASN 10:875-87), verbatim criteria.
-    if (kidney_impaired and level > 4.0) or severe & {"reduced consciousness", "coma", "seizure", "arrhythmia"}:
-        extrip.append("EXTRIP: extracorporeal treatment RECOMMENDED (impaired kidney function with [Li+] > 4.0, "
-                      "or decreased consciousness, seizures or life-threatening dysrhythmia irrespective of level).")
-    if level > 5.0 or "confusion" in symptoms:
-        extrip.append("EXTRIP: extracorporeal treatment SUGGESTED ([Li+] > 5.0 or significant confusion).")
+    # EXTRIP 2015 (Decker et al., CJASN 10:875-87) - lithium poisoning only.
+    if poisoning_context:
+        if (kidney_impaired and level > 4.0) or severe & {"reduced consciousness", "coma", "seizure", "arrhythmia"}:
+            extrip.append("EXTRIP: extracorporeal treatment RECOMMENDED (impaired kidney function with [Li+] > 4.0, "
+                          "or decreased consciousness, seizures or life-threatening dysrhythmia).")
+        if level > 5.0 or "confusion" in symptoms:
+            extrip.append("EXTRIP: extracorporeal treatment SUGGESTED ([Li+] > 5.0 or significant confusion).")
 
     hrs = None
     if post is not None and t is not None and level > 1.0:
         hrs = hours_to_below(post, t, level)
-        actions.append(f"Forecast time to fall below 1.0 mmol/L with lithium withheld: {hrs} "
-                       "(assumes current renal function; acute kidney injury prolongs this).")
-        if hrs.median > 36 or hrs.hi > 36:
+        qualifier = ("a LOWER BOUND - acute kidney injury will slow elimination further"
+                     if acute_kidney else "assumes current kidney function; serial levels should replace it")
+        actions.append(f"Forecast time to fall below 1.0 mmol/L with lithium withheld: {hrs} ({qualifier}).")
+        if poisoning_context and (hrs.median > 36 or hrs.hi > 36 or acute_kidney):
             extrip.append(f"EXTRIP: expected time to [Li+] < 1.0 may exceed 36 h (median {hrs.median:.0f} h, "
                           f"95th percentile {hrs.hi:.0f} h) - a SUGGESTED criterion; discuss with toxicology.")
     return Triage(urgency, actions, extrip, hrs)

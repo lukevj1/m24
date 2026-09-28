@@ -165,6 +165,13 @@ class Posterior:
         return [(float(t), float(np.exp(self.mode[self.n_eta + k])))
                 for k, t in enumerate(self.occasion_times)]
 
+    def clearance_ratio(self, t: float) -> float:
+        """Estimated clearance relative to what the model predicts from kidney
+        function and size (1.0 = as expected). Much above 1 with low levels
+        suggests missed doses as often as fast kidneys."""
+        eta = self.eta(self.mode)
+        return float(np.exp(eta.get("cl", 0.0) + self.drift_fitted(self.mode, t)))
+
 
 def fit(model: PopModel, case: Case, *, max_iter: int = 200) -> Posterior:
     """Fit the individual model to the case by MAP estimation."""
@@ -350,6 +357,9 @@ class Ensemble:
     def clearance_history(self) -> list[tuple[float, float]]:
         return self.best.clearance_history()
 
+    def clearance_ratio(self, t: float) -> float:
+        return float(np.exp(np.sum(self.weights * np.log([m.clearance_ratio(t) for m in self.members]))))
+
     def _split(self, n: int, rng: np.random.Generator) -> np.ndarray:
         return rng.multinomial(n, self.weights)
 
@@ -385,8 +395,12 @@ def individualise(case: Case, engine) -> "Posterior | Ensemble":
     """
     if isinstance(engine, PopModel):
         return fit(engine, case)
-    if len(engine) == 1:
-        return fit(engine[0][0], case)
+    t_ref = max([lv.time for lv in case.levels] + [d.time for d in case.doses] + [0.0])
+    cov = case.covariates(t_ref)
+    usable = [(m, w) for m, w in engine if m.applies_to(cov)] or list(engine[:1])
+    if len(usable) == 1:
+        return fit(usable[0][0], case)
+    engine = usable
     members = [fit(m, case) for m, _ in engine]
     prior = np.array([w for _, w in engine], dtype=float)
     logw = np.log(prior / prior.sum()) + np.array([m.log_evidence for m in members])

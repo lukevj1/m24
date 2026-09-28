@@ -82,6 +82,8 @@ class Recommendation:
     rationale: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     repeat_first: bool = False   # evidence too weak to justify a change: repeat a well-timed level first
+    check_adherence: bool = False
+    high: float = 1.0
 
     @property
     def change(self) -> str:
@@ -121,6 +123,19 @@ def _candidates(product: Product, clocks: Sequence[float], max_daily_mg: float, 
             yield split
 
 
+# Model-independent guardrails (local clinical governance should set these).
+# They hold whatever the model says, because every variance term in the model
+# is itself an estimate.
+GUARDRAILS = {
+    "max_start_mg": 1000.0,             # starting maintenance dose, adults < 65 with CrCl >= 60
+    "max_start_mg_older_or_ckd": 750.0,  # age >= 65 or CrCl 30-59
+    "no_start_below_crcl": 30.0,        # US labelling: not recommended below CrCl 30 mL/min
+    "max_step_mg": 500.0,               # largest single change in daily dose
+    "max_step_ratio": 1.5,              # largest relative change in daily dose
+    "adherence_check_ratio": 1.4,       # clearance this far above kidney-predicted -> confirm adherence
+}
+
+
 def recommend(
     post: Posterior,
     product: Product,
@@ -129,29 +144,38 @@ def recommend(
     template: str | Sequence[float] = "nocte",
     current: Sequence[Administration] | None = None,
     t: float | None = None,
-    high: float = 1.0,
+    high: float | None = None,
     p_high_max: float = 0.05,
     max_daily_mg: float = 2000.0,
-    max_step_ratio: float = 1.5,
+    max_step_ratio: float | None = None,
     allow_half: bool = False,
     cl_mult: float | np.ndarray = 1.0,
+    horizon_days: float = 28.0,
     n: int = 3000,
     rng: np.random.Generator | None = None,
 ) -> Recommendation:
-    """Recommend a regimen for ``target`` 12-hour levels (mmol/L).
+    """Recommend a regimen for the clinician's ``target`` 12-hour level (mmol/L).
 
-    ``high`` is the level whose probability is capped at ``p_high_max``; for
-    maintenance a Li12 above 1.0 mmol/L is the usual line. ``max_step_ratio``
-    limits how far one adjustment can move the daily dose (larger jumps are
-    offered but not auto-selected). ``cl_mult`` lets callers ask "what if"
-    (e.g. an interacting drug's uncertain effect, one value per draw).
+    * The safety ceiling follows the target: by default the probability of a
+      12-hour level above ``target[1] + 0.2`` must stay under ``p_high_max``
+      (so 1.0 for a 0.6-0.8 target, 1.2 for a 0.8-1.0 target). If the ceiling
+      stops the forecast reaching the target, the card says so.
+    * Doses are chosen for the clearance expected over the next
+      ``horizon_days`` (short-term drift relaxes), not a transient dip.
+    * Steps are limited (ratio and absolute mg); larger moves are offered as
+      alternatives but not auto-selected.
+    * If the patient appears to clear lithium much faster than their kidneys
+      predict, an increase comes with "confirm adherence first".
     """
     rng = rng or np.random.default_rng(7)
     if t is None:
         t = max([lv.time for lv in post.case.levels], default=max([d.time for d in post.case.doses], default=0.0))
-    clocks = list(TEMPLATES[template]) if isinstance(template, str) else list(template)
-    G, _ = unit_contributions(post, clocks, product.release, t, n, rng, cl_mult)
     lo, hi = target
+    high = hi + 0.2 if high is None else high
+    max_step_ratio = GUARDRAILS["max_step_ratio"] if max_step_ratio is None else max_step_ratio
+    clocks = list(TEMPLATES[template]) if isinstance(template, str) else list(template)
+    t_draw = t + horizon_days * 24.0
+    G, _ = unit_contributions(post, clocks, product.release, t_draw, n, rng, cl_mult)
 
     def evaluate(mgs: Sequence[float], clks: Sequence[float], Gm: np.ndarray) -> DoseOption:
         mmol = np.array([mg_to_mmol(m, product.salt) for m in mgs])
@@ -168,7 +192,7 @@ def recommend(
         if cur_clocks == clocks and forms == {product.release}:
             Gc = G
         else:
-            Gc, _ = unit_contributions(post, cur_clocks, forms.pop(), t, n, rng, cl_mult)
+            Gc, _ = unit_contributions(post, cur_clocks, forms.pop(), t_draw, n, rng, cl_mult)
         mm = np.array([a.mmol for a in current])
         s = Gc @ mm
         current_opt = DoseOption(list(current), summarise(s), float(np.mean((s >= lo) & (s <= hi))),
@@ -183,7 +207,13 @@ def recommend(
     warnings: list[str] = []
     if current_opt is not None:
         d0 = current_opt.daily_mg
-        within = [o for o in safe if o.daily_mg <= d0 * max_step_ratio and o.daily_mg >= d0 / max_step_ratio]
+        # One tablet up or down is always allowed: with 250 mg tablets a ratio
+        # limit alone would lock a patient on 250 mg (or 500 mg) for good.
+        one = product.strength_mg / 2 if (allow_half and product.scored) else product.strength_mg
+        up = max(d0 * max_step_ratio, d0 + one)
+        down = min(d0 / max_step_ratio, d0 - one)
+        within = [o for o in safe if down - 1e-6 <= o.daily_mg <= up + 1e-6
+                  and abs(o.daily_mg - d0) <= max(GUARDRAILS["max_step_mg"], one) + 1e-6]
         if within:
             safe_step = within
         else:
@@ -193,19 +223,27 @@ def recommend(
         safe_step = safe
     if not safe_step:
         chosen = min(options, key=lambda o: o.p_high)
-        warnings.append(f"no regimen keeps P(Li12 > {high}) below {p_high_max:.0%}; lowest-risk option shown")
+        warnings.append(f"no regimen keeps P(12-h level > {high:.1f}) below {p_high_max:.0%}; lowest-risk option shown")
     else:
         chosen = sorted(safe_step, key=rank_key)[0]
-        # Keep the current regimen if it is essentially as good (avoid churn).
+        # Keep the current regimen if it is in range and nearly as good: with
+        # tablet-sized steps two doses often straddle a narrow window, and
+        # chasing a few points of probability means flip-flopping between them.
         if current_opt is not None and current_opt.p_high <= p_high_max and \
-                current_opt.p_target >= chosen.p_target - 0.05 and lo <= current_opt.li12.median <= hi:
+                current_opt.p_target >= chosen.p_target - 0.10 and lo <= current_opt.li12.median <= hi:
             chosen = current_opt
+    if chosen.li12.median < lo and any(lo <= o.li12.median <= hi and o.p_high > p_high_max for o in options):
+        warnings.append(f"the safety ceiling (P(> {high:.1f}) <= {p_high_max:.0%}) stops the forecast reaching the "
+                        "target with this much uncertainty; another level will narrow it before going higher")
 
     # Know when not to answer: if the current regimen is plausibly fine, nothing
     # is dangerous, and the evidence is simply too uncertain, a better-timed
-    # level beats a dose change driven by uncertainty alone.
+    # level beats a dose change driven by uncertainty alone. Not for a
+    # hypothetical (an interaction or pregnancy forecast): there the width comes
+    # from the effect being forecast, and another level today cannot narrow it.
+    hypothetical = bool(np.any(np.asarray(cl_mult, dtype=float) != 1.0))
     repeat_first = False
-    if current_opt is not None and chosen is not current_opt:
+    if current_opt is not None and chosen is not current_opt and not hypothetical:
         c = current_opt.li12
         vague = (c.hi - c.lo) > 0.35
         plausible = lo - 0.1 <= c.median <= hi + 0.1
@@ -215,6 +253,15 @@ def recommend(
             chosen = current_opt
             warnings.append(f"evidence too uncertain to justify a change (90% CrI {c.lo:.2f}-{c.hi:.2f}); "
                             "repeat a level at least 10 h after the evening dose, before any morning dose")
+
+    # Low levels with apparently fast clearance are as often missed doses as fast kidneys.
+    check_adherence = False
+    if current_opt is not None and chosen.daily_mg > current_opt.daily_mg and post.case.levels:
+        ratio = post.clearance_ratio(t)
+        if ratio > GUARDRAILS["adherence_check_ratio"]:
+            check_adherence = True
+            warnings.append(f"levels are lower than kidney function predicts (clearance about {ratio:.1f}x expected): "
+                            "confirm adherence and dose timing with the patient before increasing")
 
     hl = half_life_h(post, t, n=400, rng=rng)
     t_half_days = hl.median / 24.0
@@ -226,14 +273,18 @@ def recommend(
         rationale.append(f"Current regimen ({current_opt.describe(product)}): standardised 12-h level "
                          f"{current_opt.li12}; P(in {lo}-{hi}) = {current_opt.p_target:.0%}.")
     rationale.append(f"Recommended ({chosen.describe(product)}): predicted 12-h level {chosen.li12}; "
-                     f"P(in {lo}-{hi}) = {chosen.p_target:.0%}; P(> {high}) = {chosen.p_high:.1%}.")
+                     f"P(in {lo}-{hi}) = {chosen.p_target:.0%}; P(below {lo}) = {chosen.p_low:.0%}; "
+                     f"P(> {high:.1f}) = {chosen.p_high:.1%}.")
     rationale.append(f"Estimated half-life {hl.median:.0f} h (90% CrI {hl.lo:.0f}-{hl.hi:.0f}): "
                      f"~90% of a new steady state is reached after {3.3 * t_half_days:.1f} days.")
     ranked = sorted(options, key=rank_key)[:5]
     if repeat_first:
         recheck = 1
-    return Recommendation(target, chosen, ranked, current_opt, product, recheck, recheck_conv, hl, rationale,
-                          warnings, repeat_first)
+    rec = Recommendation(target, chosen, ranked, current_opt, product, recheck, recheck_conv, hl, rationale,
+                         warnings, repeat_first)
+    rec.check_adherence = check_adherence
+    rec.high = high
+    return rec
 
 
 @dataclass
@@ -260,8 +311,13 @@ def initiation_plan(prior: Posterior, product: Product, *, target: tuple[float, 
     The first level is scheduled a few days after reaching the maintenance dose;
     the Bayesian update does not need steady state, so it can come early.
     """
-    kwargs.setdefault("high", 1.0)      # a starting dose is chosen conservatively: P(level > 1.0) <= 5%
-    rec = recommend(prior, product, target=target, template=template, t=0.0, **kwargs)
+    cov = prior.case.covariates(0.0)
+    if cov.crcl < GUARDRAILS["no_start_below_crcl"]:
+        raise ValueError(f"CrCl {cov.crcl:.0f} mL/min: lithium is not recommended below "
+                         f"{GUARDRAILS['no_start_below_crcl']:.0f} mL/min (US labelling); specialist decision")
+    cap = GUARDRAILS["max_start_mg_older_or_ckd"] if (cov.age >= 65 or cov.crcl < 60) else GUARDRAILS["max_start_mg"]
+    kwargs.setdefault("max_daily_mg", cap)
+    rec = recommend(prior, product, target=target, template=template, t=0.0, horizon_days=0.0, **kwargs)
     step = product.strength_mg
     lead: list[Administration] = []
     for a in rec.chosen.admins:

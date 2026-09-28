@@ -124,11 +124,13 @@ def renal(model):
     ctx = Context(start_h=0.0, last_change_h=24 * 800.0, stable=True, age=cov(now).age,
                   renal_or_thyroid_risk=bool(rt.flags), last_level=levels[-1].value,
                   last_level_h=levels[-1].time, last_bloods_h=now)
-    pl = plan(ctx, now, post=post, admins=admins, egfr_slope_per_year=rt.slope, egfr_now=rt.latest)
-    target = default_target(cov(now).age)
+    pl = plan(ctx, now, post=post, admins=admins, target=(0.5, 0.8), egfr_slope_per_year=rt.slope,
+              egfr_now=rt.latest)
+    # The clinician sets the target; ISBD/IGSLi allow up to 0.7-0.8 at 65-79 for someone doing well.
+    target = (0.5, 0.8)
     rec = recommend(post, LITHICARB, target=target, current=admins)
-    title = ("4. SLOWLY FALLING KIDNEY FUNCTION - trend detection, an age-appropriate target (0.4-0.6) "
-             "and a prompt for the renal conversation")
+    title = ("4. SLOWLY FALLING KIDNEY FUNCTION - trend detection, the clinician's own target (0.5-0.8 for a "
+             "71-year-old doing well), and a prompt for the renal conversation")
     return card(post, admins, li12, title=title, target=target, rec=rec, renal=rt, plan=pl)
 
 

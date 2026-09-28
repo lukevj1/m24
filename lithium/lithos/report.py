@@ -98,9 +98,13 @@ def card(post: Posterior, admins: Sequence[Administration], li12: Summary, *, ti
         L.append(f"  Advice: {w.interaction.advice}")
         if w.adjusted is not None:
             a = w.adjusted
-            L.append(f"  If it must be started: {a.change} lithium to {a.chosen.describe(a.product)} -> forecast "
-                     f"{a.chosen.li12} (P in range {a.chosen.p_target:.0%}, P > 1.0 {a.chosen.p_high:.0%}); "
-                     f"level {max(5, a.recheck_days)}-7 days after starting.")
+            L.append(f"  If it must be started, proposal to the clinician who manages the lithium: {a.change} to "
+                     f"{a.chosen.describe(a.product)} -> forecast {a.chosen.li12} "
+                     f"(P in range {a.chosen.p_target:.0%}, P below range {a.chosen.p_low:.0%}, "
+                     f"P > {a.high:.1f} {a.chosen.p_high:.0%}).")
+        fu = w.followup_tasks(0.0)
+        if fu:
+            L.append("  Follow-up booked: " + "; ".join(txt for _, txt in fu) + ".")
 
     if renal is not None:
         L.append(f"\nKIDNEYS: latest eGFR {renal.latest:.0f} ({renal.latest_stage}); "
@@ -133,20 +137,25 @@ def card(post: Posterior, admins: Sequence[Administration], li12: Summary, *, ti
 
 
 def patient_message(rec: Recommendation | None, li12: Summary, target: tuple[float, float],
-                    next_test_days: int | None) -> str:
+                    next_test_days: int | None, *, twice_daily: bool = False, emergency_number: str = "000") -> str:
+    """Plain-language message. Dose changes are only ever ones a prescriber has approved."""
     lo, hi = target
     if li12.median < lo:
         where = "a little below the range we are aiming for"
     elif li12.median > hi:
         where = "a little above the range we are aiming for"
     else:
-        where = "right where we want it"
+        where = "in the range we are aiming for"
     msg = [f"Your lithium level is {where}."]
-    if rec is not None and rec.change not in ("no change",):
+    if rec is not None and rec.change in ("increase", "decrease"):
         msg.append(f"Your prescriber has approved a new dose: {rec.chosen.describe(rec.product)}.")
     if next_test_days:
-        msg.append(f"Please have your next blood test in about {next_test_days} days. Any time of day is fine; "
-                   "just tap 'I took my dose' in the app when you take your evening tablets so we know the timing.")
-    msg.append("If you get vomiting or diarrhoea, can't keep fluids down, or notice a worse tremor, unsteadiness "
-               "or confusion, skip your lithium and contact us the same day.")
+        timing = ("have it before your morning dose" if twice_daily
+                  else "any time the next day is fine, as long as it is at least 6 hours after your dose")
+        msg.append(f"Please have your next blood test in about {next_test_days} days: {timing}. "
+                   "Tell the collection centre what time you took your last dose.")
+    msg.append("If you have vomiting or diarrhoea or can't keep fluids down, follow the sick-day plan your "
+               "prescriber gave you and contact your team today.")
+    msg.append(f"If you become confused, very unsteady or very drowsy, or have a seizure, get urgent help now "
+               f"(call {emergency_number}).")
     return " ".join(msg)

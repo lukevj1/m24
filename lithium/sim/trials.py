@@ -152,15 +152,22 @@ def usual_care(vp: VirtualPatient, truth: PopModel, rng: np.random.Generator, st
 def model_informed(vp: VirtualPatient, truth: PopModel, engine, rng: np.random.Generator,
                    high: float = 1.2) -> dict:
     """Model-chosen start (brief lead-in), levels at convenient times with the
-    time recorded, Bayesian update, confirm with two consecutive in-range
-    no-change decisions."""
+    time recorded, Bayesian update and recommendation after every level.
+
+    The stopping rule mirrors usual care: two consecutive levels on the same
+    dose that this arm reads as in range (the engine's standardised 12-h
+    estimate is in the target and it recommends no change), at least one of
+    them drawn 3.3 or more estimated half-lives after the last dose change, so
+    stability is confirmed near steady state, as it is in usual care."""
     cov = vp.cov
     prior = individualise(Case(cov, [], []), engine)
     ip = initiation_plan(prior, PRODUCT, target=TARGET, lead_in_days=3, n=N_DRAWS)
     lead_mg = ip.lead_in[0].mg
     mg = ip.maintenance.daily_mg
-    periods = [[CLOCK, CLOCK + 3 * 24.0, lead_mg], [CLOCK + 3 * 24.0, None, mg]]
-    day, tests, streak, confirmed = 7, 0, 0, None
+    last_change = CLOCK + 3 * 24.0
+    periods = [[CLOCK, last_change, lead_mg], [last_change, None, mg]]
+    day, tests, confirmed = 7, 0, None
+    streak: list[bool] = []     # per in-range level on this dose: drawn near steady state?
     levels: list[Level] = []
     adherence = Adherence(vp, rng)
     while day <= MAX_DAYS:
@@ -175,22 +182,26 @@ def model_informed(vp: VirtualPatient, truth: PopModel, engine, rng: np.random.G
         current = [Administration(CLOCK, mg)]
         rec = recommend(post, PRODUCT, target=TARGET, current=current, n=N_DRAWS, high=high,
                         rng=np.random.default_rng(int(rng.integers(1 << 31))))
-        if rec.repeat_first:
-            day += 3            # a better-timed level soon; no dose change, no confirmation credit
-            continue
-        if rec.change == "no change":
-            streak += 1
-            if streak == 2:
+        est = rec.current.li12.median
+        if rec.change == "no change" and TARGET[0] <= est <= TARGET[1]:
+            streak.append(t - last_change >= 3.3 * rec.half_life.median)
+            if len(streak) >= 2 and any(streak):
                 confirmed = day
                 break
             day += 7
             continue
-        streak = 0
+        streak = []
+        if rec.repeat_first:
+            day += 3            # a better-timed level soon; no dose change
+            continue
+        if rec.change == "no change":
+            day += 7            # out of range but no better option (e.g. the safety ceiling): recheck
+            continue
         new = rec.chosen.daily_mg
         change_t = day * 24.0 + CLOCK
         periods[-1][1] = change_t
         periods.append([change_t, None, new])
-        mg = new
+        mg, last_change = new, change_t
         day += 1 + int(np.clip(rec.recheck_days, 4, 7))
     end = (min(day, MAX_DAYS) + 1) * 24.0
     periods[-1][1] = max(end, periods[-1][0] + 24.0)

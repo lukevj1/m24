@@ -109,6 +109,11 @@ class PopModel:
     status: str = "provisional"     # provisional | published | published-adapted | simulation-truth
     notes: str = ""
     omega_corr: dict[tuple[str, str], float] = field(default_factory=dict)
+    # Who the model was built for; outside it the model is left out of the ensemble.
+    applicable: Callable[[Covariates], bool] | None = None
+
+    def applies_to(self, cov: Covariates) -> bool:
+        return self.applicable is None or bool(self.applicable(cov))
 
     def drift_cov(self, dt_days):
         """Covariance of log-CL drift between two times ``dt_days`` apart."""
@@ -158,7 +163,7 @@ class PopModel:
 # lower Cmax, and urinary recovery was 94.5% vs 90.2% (docs/EVIDENCE.md).
 ABSORPTION = {
     "IR": Formulation(ka=1.2),
-    "SR": Formulation(ka=0.35, f=0.95),
+    "SR": Formulation(ka=0.40, f=0.95),
     "LIQ": Formulation(ka=2.5),
 }
 
@@ -171,29 +176,33 @@ ABSORPTION = {
 #     published typical values of 1.36-1.50 L/h in adults with normal kidneys;
 #   * lithium distributes in total body water: V 0.7-1.0 L/kg in lean adults
 #     but ~0.42 L/kg in obesity, so total volume scales with fat-free mass
-#     (0.95 L/kg FFM);
+#     (0.85 L/kg FFM, calibrated against published obese/lean and older-adult
+#     cohorts - see validation/literature.py);
 #   * distribution half-life ~1.4 h in adults and ~2.7 h in older adults, with
-#     distribution complete ~10.6 h post dose in the elderly: V1 40% / V2 60%
-#     of total, Q 5.5 L/h scaled by FFM^0.75 and falling with age;
+#     distribution complete ~10.6 h post dose in the elderly: V1 55% / V2 45%
+#     of total (a larger central volume reproduces the published CR/IR peak
+#     ratio and older-adult peaks), Q 5.5 L/h scaled by FFM^0.75 and falling
+#     with age;
 #   * between-subject variability on CL ~24-25% in published models.
 # Residual error excludes timing error and drift, which are modelled
 # separately, so it is smaller than published "residual" terms (14-16%).
 # ---------------------------------------------------------------------------
 
 def _renal_typical(c: Covariates) -> dict[str, float]:
-    vt = 0.95 * c.ffm
+    vt = 0.85 * c.ffm
     return {
         "cl": 0.23 * 0.06 * c.crcl,
-        "v1": 0.40 * vt,
-        "v2": 0.60 * vt,
+        "v1": 0.55 * vt,
+        "v2": 0.45 * vt,
         "q": 5.5 * (c.ffm / 55.0) ** 0.75 * (max(c.age, 18.0) / 40.0) ** -1.0,
     }
 
 
 RENAL_2CMT = PopModel(
     name="lithos-renal-2cmt",
-    reference=("Assembled from published physiology: CL = 23% of Cockcroft-Gault CrCL; V = 0.95 L/kg "
-               "fat-free mass split 40/60; distribution half-life 1.4-2.7 h. See docs/EVIDENCE.md."),
+    reference=("Assembled from published physiology: CL = 23% of Cockcroft-Gault CrCL; V = 0.85 L/kg "
+               "fat-free mass, 55% central / 45% peripheral; distribution half-life 1.4-2.7 h. "
+               "See docs/EVIDENCE.md and validation/literature.py."),
     typical=_renal_typical,
     omega={"cl": 0.25, "v": 0.20},
     formulations=ABSORPTION,
@@ -227,6 +236,9 @@ METHANEETHORN_2019 = PopModel(
     sigma_prop=0.12,
     sigma_add=0.02,
     status="published (IIV and residual assumed)",
+    # Built in adults with acute mania (mean age ~38) and without a kidney covariate:
+    # not used for older adults or anyone with reduced kidney function.
+    applicable=lambda c: c.egfr >= 60 and c.age < 65,
 )
 
 

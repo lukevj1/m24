@@ -64,7 +64,7 @@ def cl_multiplier(gest_week: float | None = None, postpartum_week: float | None 
     return 1.0 / (1.0 + float(np.interp(gest_week, w, x)))
 
 
-def effects(conception_h: float, delivery_h: float, step_weeks: float = 1.0) -> list[Effect]:
+def effects(conception_h: float, delivery_h: float, step_weeks: float = 1.0, curve: str = "westin") -> list[Effect]:
     """Weekly clearance effects from conception to 8 weeks postpartum."""
     out = []
     t = conception_h
@@ -102,37 +102,74 @@ class PregnancyStep:
     forecast: str
 
 
-def plan(pre_pregnancy: Posterior, product: Product, current: list[Administration], *,
+def plan(post: Posterior, product: Product, current: list[Administration], *,
          target: tuple[float, float] = (0.6, 0.8), postpartum_target: tuple[float, float] = (0.8, 1.0),
          weeks: tuple[int, ...] = (0, 8, 12, 16, 20, 24, 28, 32, 36),
-         postpartum_weeks: tuple[int, ...] = (0, 1, 2, 4, 6), curve: str = "westin") -> list[PregnancyStep]:
+         postpartum_weeks: tuple[int, ...] = (0, 1, 2, 4, 6), curve: str = "westin",
+         conception_h: float | None = None, delivery_h: float | None = None) -> list[PregnancyStep]:
     """Forecast the dose that keeps the 12-h level in ``target`` through
-    pregnancy and after delivery, starting from the pre-pregnancy posterior.
+    pregnancy and after delivery (``postpartum_target`` for the first month).
 
-    This is a planning aid for the perinatal team, not an automatic titration:
-    each check level (every 4 weeks, weekly from 36 weeks, within 24 h of
-    delivery) replaces the population curve with the patient's own data.
+    Two modes:
+    * ``conception_h is None``: ``post`` was fitted before pregnancy; the
+      population curve is applied as a clearance multiplier with between-woman
+      uncertainty.
+    * ``conception_h`` given: ``post`` was fitted on a case that already
+      carries the pregnancy effects (``effects()``) and any levels measured
+      during pregnancy, so the plan updates from the woman's own data; only
+      weeks after the latest level carry extra curve uncertainty.
+
+    A planning aid for the perinatal team, not an automatic titration: each
+    check level (every 4 weeks, weekly from 36 weeks, within 24 h of birth)
+    updates the forecast.
     """
-    t = max([lv.time for lv in pre_pregnancy.case.levels], default=0.0)
+    t_last = max([lv.time for lv in post.case.levels], default=0.0)
     rng = np.random.default_rng(17)
     n = 1500
     steps = []
     clocks = [a.clock for a in current]
+
+    def forecast(t_eval, mult, tgt):
+        return recommend(post, product, target=tgt, template=clocks, current=current, t=t_eval,
+                         cl_mult=mult, max_step_ratio=2.0, horizon_days=0.0, n=n)
+
     for gw in weeks:
-        m = cl_multiplier(gest_week=gw, curve=curve)
-        rec = recommend(pre_pregnancy, product, target=target, template=clocks, current=current, t=t,
-                        cl_mult=_mult_samples(m, n, rng), max_step_ratio=2.0, n=n)
+        if conception_h is None:
+            m = cl_multiplier(gest_week=gw, curve=curve)
+            rec = forecast(t_last, _mult_samples(m, n, rng), target)
+        else:
+            t_eval = conception_h + gw * WEEK
+            m = cl_multiplier(gest_week=gw, curve=curve)
+            ahead = max(0.0, (t_eval - t_last) / WEEK)
+            spread = np.exp(rng.normal(0.0, CURVE_SD * min(1.0, ahead / 8.0), size=n))
+            rec = forecast(max(t_eval, t_last), spread, target)
         steps.append(PregnancyStep(gw, None, m, rec.chosen.describe(product), rec.chosen.daily_mg,
                                    str(rec.chosen.li12)))
-    late = steps[-1]
     for pw in postpartum_weeks:
         m = cl_multiplier(postpartum_week=pw)
         tgt = postpartum_target if pw < 4 else target
-        rec = recommend(pre_pregnancy, product, target=tgt, template=clocks, current=current, t=t,
-                        cl_mult=_mult_samples(m, n, rng), max_step_ratio=2.0, n=n)
+        if conception_h is None or delivery_h is None:
+            rec = forecast(t_last, _mult_samples(m, n, rng), tgt)
+        else:
+            t_eval = delivery_h + pw * WEEK + 12.0
+            rec = forecast(max(t_eval, t_last), _mult_samples(1.0 + 1e-9, n, rng), tgt)
         steps.append(PregnancyStep(None, pw, m, rec.chosen.describe(product), rec.chosen.daily_mg,
                                    str(rec.chosen.li12)))
     return steps
+
+
+def delivery_notes() -> list[str]:
+    """Points the perinatal plan must address explicitly (docs/EVIDENCE.md E35)."""
+    return [
+        "Before delivery: practice differs. US labelling advises reducing or stopping lithium 2-3 days before the "
+        "expected date; an observational study of 233 perinatal levels found no intrapartum rise and advises against "
+        "pre-delivery reduction. Decide with the obstetric and perinatal psychiatry team.",
+        "Levels: within 24 h of birth, then twice weekly for 2 weeks; restart or continue at the planned postpartum "
+        "dose (first month target often 0.8-1.0 for relapse prevention).",
+        "Postpartum analgesia: routine NSAIDs raise lithium levels - prefer paracetamol or plan a level.",
+        "Breastfeeding: infant exposure is substantial (infant serum levels about a third to a half of maternal); "
+        "a shared decision with paediatric input and infant monitoring if breastfeeding.",
+    ]
 
 
 def postpartum_hazard(pre_pregnancy: Posterior, late_pregnancy_mg: float, current: list[Administration],

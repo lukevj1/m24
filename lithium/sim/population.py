@@ -36,7 +36,7 @@ class VirtualPatient:
     pid: int
     cov: CovariateTimeline
     eta: dict[str, float]
-    drift_times: np.ndarray       # h, start of each weekly drift segment
+    drift_times: np.ndarray       # h, start of each daily drift segment
     drift_values: np.ndarray      # log-CL drift per segment
     miss_prob: float
 
@@ -72,15 +72,17 @@ def make_population(n: int, truth: PopModel, seed: int = 1, horizon_days: int = 
         cov = CovariateTimeline(sex=sex, age_at_t0=age, weight=weight, height=height, creatinine=[(0.0, scr)])
         eta_v = rng.multivariate_normal(np.zeros(len(names)), Om)
         eta = dict(zip(names, eta_v))
-        # Weekly drift from the truth's two OU processes, simulated exactly.
-        weeks = int(horizon_days / 7) + 2
-        times = np.arange(weeks) * 7 * 24.0
-        drift = np.zeros(weeks)
+        # Drift from the truth's two OU processes, simulated exactly on a daily
+        # grid. (A weekly grid made clearance jump once a week, which penalised
+        # any estimate made just after a jump.)
+        days = int(horizon_days) + 2
+        times = np.arange(days) * 24.0
+        drift = np.zeros(days)
         for sd, tau in (truth.drift_slow, truth.drift_fast):
-            rho = np.exp(-7.0 / tau)
+            rho = np.exp(-1.0 / tau)
             x = rng.normal(0, sd)
             path = []
-            for _ in range(weeks):
+            for _ in range(days):
                 path.append(x)
                 x = rho * x + rng.normal(0, sd * np.sqrt(1 - rho * rho))
             drift += np.array(path)

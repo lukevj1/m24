@@ -31,10 +31,16 @@ INK, INK2, MUTED, GRID, SURFACE = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#
 TARGET_WASH = "#e6f0fb"
 
 
+_POP: dict = {}
+
+
 def _one(args):
     idx, n_pts, seed, truth_name, engine_name, which = args
     truth, engine = get_model(truth_name), get_engine(engine_name)
-    vp = make_population(n_pts, truth, seed=seed)[idx]
+    key = (n_pts, seed, truth_name)
+    if key not in _POP:                     # one population per worker process
+        _POP[key] = make_population(n_pts, truth, seed=seed)
+    vp = _POP[key][idx]
     rng = np.random.default_rng(seed * 100003 + idx)
     out = {"pid": idx, "age": vp.cov(0).age, "egfr": vp.cov(0).egfr, "miss": vp.miss_prob}
     try:
@@ -73,8 +79,12 @@ def summarise(rows: list[dict], meta: dict) -> str:
          "", "These are simulations: they show whether the mechanisms work under stated assumptions, "
          "not clinical effectiveness. See docs/SIMULATION.md for methods and caveats.", ""]
     errors = [r for r in rows if "error" in r]
-    if errors:
-        L += [f"Runs with errors: {len(errors)} (excluded).", ""]
+    declined = [r for r in errors if "not recommended below" in r["error"]]
+    if declined:
+        L += [f"Excluded: {len(declined)} patient(s) with creatinine clearance below 30 mL/min, for whom the engine "
+              "declines to plan a start (lithium not recommended; specialist decision).", ""]
+    if len(errors) > len(declined):
+        L += [f"Runs with errors: {len(errors) - len(declined)} (excluded).", ""]
     rows = [r for r in rows if "error" not in r]
 
     if rows and "mipd" in rows[0]:
@@ -216,15 +226,17 @@ def figures(rows: list[dict]):
         _style(ax)
         edges = np.arange(2, 23, 2)
         mids = (edges[1:] + edges[:-1]) / 2
-        series = [("naive", "Level read at face value", GREY_DARK), ("engine_med", "Engine, this level only", BLUE),
-                  ("hist_med", "Engine + one earlier level", AQUA)]
-        for key, label, color in series:
+        # Line style and marker shape back up colour (the grey/aqua pair is close for some colour-vision types).
+        series = [("naive", "Level read at face value", GREY_DARK, "--", "s"),
+                  ("engine_med", "Engine, this level only", BLUE, "-", "o"),
+                  ("hist_med", "Engine + one earlier level", AQUA, ":", "^")]
+        for key, label, color, ls, mk in series:
             ys = []
             for lo, hi in zip(edges[:-1], edges[1:]):
                 sub = [a for a in at if lo <= a["hours"] < hi]
                 ys.append(np.median([abs(a[key] - a["truth12"]) for a in sub]) if sub else np.nan)
-            ax.plot(mids, ys, color=color, linewidth=2, marker="o", markersize=5, label=label,
-                    markeredgecolor=SURFACE, markeredgewidth=1.5, zorder=3)
+            ax.plot(mids, ys, color=color, linewidth=2, linestyle=ls, marker=mk, markersize=6, label=label,
+                    markeredgecolor=SURFACE, markeredgewidth=1.2, zorder=3)
             ax.annotate(label, (mids[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", va="center",
                         fontsize=8.5, color=INK2)
         ax.axvspan(11, 13, color=TARGET_WASH, zorder=0)
@@ -265,12 +277,12 @@ def figures(rows: list[dict]):
         fig, ax = plt.subplots(figsize=(7.5, 3.8))
         _style(ax)
         days = sorted({e["day"] for e in ea_rows})
-        for key, label, color in [("naive", "Level read at face value", GREY_DARK),
-                                  ("no_history", "Engine, no earlier level", BLUE),
-                                  ("with_history", "Engine + earlier level on old dose", AQUA)]:
+        for key, label, color, ls, mk in [("naive", "Level read at face value", GREY_DARK, "--", "s"),
+                                          ("no_history", "Engine, no earlier level", BLUE, "-", "o"),
+                                          ("with_history", "Engine + earlier level on old dose", AQUA, ":", "^")]:
             ys = [np.median([abs(e[key] - e["truth"]) for e in ea_rows if e["day"] == d]) for d in days]
-            ax.plot(days, ys, color=color, linewidth=2, marker="o", markersize=5, label=label,
-                    markeredgecolor=SURFACE, markeredgewidth=1.5)
+            ax.plot(days, ys, color=color, linewidth=2, linestyle=ls, marker=mk, markersize=6, label=label,
+                    markeredgecolor=SURFACE, markeredgewidth=1.2)
         ax.set_xlabel("Day of sampling after a dose change")
         ax.set_ylabel("Median absolute error (mmol/L)")
         ax.set_xticks(days)
@@ -284,7 +296,7 @@ def figures(rows: list[dict]):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=500)
-    ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--seed", type=int, default=4242)  # 2026 was used while developing; 4242 is held out
     ap.add_argument("--truth", default="truth-perturbed")
     ap.add_argument("--engine", default="ensemble", help='"ensemble" or a single model name')
     ap.add_argument("--which", default="titration,anytime,thiazide,early")

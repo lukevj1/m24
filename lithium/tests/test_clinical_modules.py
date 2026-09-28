@@ -236,9 +236,19 @@ def test_triage_levels():
     assert triage(0.7).urgency == "routine"
     assert triage(1.3).urgency == "review"
     assert triage(1.7).urgency == "same-day"
+    assert triage(2.1).urgency == "emergency"                     # chronic accumulation
     assert triage(1.6, {"confusion"}).urgency == "emergency"
     assert any("RECOMMENDED" in e for e in triage(4.5, egfr=30).extrip)
     assert any("SUGGESTED" in e for e in triage(5.5).extrip)
+
+
+def test_triage_escalates_fluid_loss_and_kidneys_and_gates_extrip():
+    assert triage(1.4, {"vomiting", "diarrhoea"}, egfr=35).urgency == "same-day"
+    assert triage(1.3, creatinine_baseline=80, creatinine_now=130).urgency == "same-day"
+    # EXTRIP is for lithium poisoning: not raised for symptoms at therapeutic levels
+    assert triage(0.5, {"confusion"}).extrip == []
+    low_seizure = triage(0.3, {"seizure"})
+    assert low_seizure.urgency == "emergency" and low_seizure.extrip == []
 
 
 def test_hours_to_below_matches_first_order_decay():
@@ -257,19 +267,29 @@ def test_hours_to_below_matches_first_order_decay():
 
 # --- behaviour added with the ensemble -----------------------------------------
 
-def test_ensemble_weights_are_a_distribution_and_follow_the_data():
-    from lithos.bayes import Ensemble, individualise
-    from lithos.models import METHANEETHORN_2019, RENAL_2CMT, get_engine
-    cov = cov_typical(age_at_t0=70, creatinine=[(0, 160)])     # poor kidney function
+def test_kidney_blind_model_is_excluded_outside_its_population():
+    from lithos.bayes import Posterior, individualise
+    from lithos.models import RENAL_2CMT, get_engine
+    cov = cov_typical(age_at_t0=70, creatinine=[(0, 160)])     # older, poor kidney function
     admins = [Administration(21, 500)]
     doses = expand(21, 24 * 40, admins)
-    truth = RENAL_2CMT.individual(cov(0), {})                 # truth follows the kidney-aware model
+    truth = RENAL_2CMT.individual(cov(0), {})
+    lv = [Level(24 * d + 9, float(simulate(doses, truth, [24 * d + 9])[0])) for d in (20, 35)]
+    post = individualise(Case(cov, doses, lv), get_engine())
+    assert isinstance(post, Posterior) and post.model.name == RENAL_2CMT.name
+
+
+def test_ensemble_weights_are_a_distribution_for_eligible_adults():
+    from lithos.bayes import Ensemble, individualise
+    from lithos.models import get_engine
+    cov = cov_typical(age_at_t0=35, creatinine=[(0, 70)])
+    admins = [Administration(21, 750)]
+    doses = expand(21, 24 * 40, admins)
+    truth = MODEL.individual(cov(0), {})
     lv = [Level(24 * d + 9, float(simulate(doses, truth, [24 * d + 9])[0])) for d in (20, 35)]
     ens = individualise(Case(cov, doses, lv), get_engine())
-    assert isinstance(ens, Ensemble)
+    assert isinstance(ens, Ensemble) and len(ens.members) == 2
     assert ens.weights.sum() == pytest.approx(1.0)
-    names = [m.model.name for m in ens.members]
-    assert ens.weights[names.index(RENAL_2CMT.name)] > ens.weights[names.index(METHANEETHORN_2019.name)]
 
 
 def test_uninformative_sample_prompts_a_repeat_not_a_dose_change():
@@ -291,3 +311,34 @@ def test_starting_dose_is_more_conservative_than_titration_rule():
     titr = recommend(prior, LITHICARB, t=0.0, high=1.2)          # P(> 1.2) <= 5%
     assert start.maintenance.daily_mg <= titr.chosen.daily_mg
     assert start.maintenance.p_high <= 0.05
+
+
+def test_pregnancy_effects_and_in_pregnancy_update():
+    from lithos.bayes import fit as fit_
+    from lithos.case import Case as Case_
+    cov = cov_typical(age_at_t0=31, weight=66, height=167, creatinine=[(0, 68)])
+    admins = [Administration(21, 1000)]
+    conception, delivery = 24 * 100.0, 24 * (100 + 280.0)
+    eff = pregnancy.effects(conception, delivery)
+    assert eff and all(e.cl_mult > 0 for e in eff)
+    doses = expand(21, conception + 24 * 7 * 20, admins)
+    truth = MODEL.individual(cov(0), {})
+    t20 = conception + 24 * 7 * 20 - 12
+    case = Case_(cov, doses, [Level(24 * 60 + 9, float(simulate(doses, truth, [24 * 60 + 9])[0])),
+                              Level(t20, 0.55)], effects=eff)
+    post = fit_(MODEL, case)
+    steps = pregnancy.plan(post, LITHICARB, admins, conception_h=conception, delivery_h=delivery,
+                           weeks=(20, 28, 36), postpartum_weeks=(0, 6))
+    assert steps[0].daily_mg >= 1000                     # a low mid-pregnancy level supports a higher dose
+    assert steps[-1].daily_mg <= steps[2].daily_mg       # after delivery the dose comes back down
+    assert len(pregnancy.delivery_notes()) == 4
+
+
+def test_interaction_lookup_handles_brands_combinations_and_unknowns():
+    assert interactions.lookup("Nurofen").key == "nsaid"
+    assert interactions.lookup("perindopril arginine").key == "acei"
+    assert {i.key for i in interactions.lookup_all("Coversyl Plus")} == {"acei", "thiazide"}
+    assert {i.key for i in interactions.lookup_all("irbesartan/hydrochlorothiazide")} == {"arb", "thiazide"}
+    found, unknown = interactions.screen(["Nurofen", "paracetamol", "mysterymab"])
+    assert [f.key for f in found] == ["nsaid"] and unknown == ["mysterymab"]
+    assert interactions.CATALOG["acei"].followup_days == (7, 28)

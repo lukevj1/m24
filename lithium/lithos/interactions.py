@@ -25,8 +25,11 @@ plan whatever the forecast says.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Sequence
+
+import re
+from dataclasses import replace
 
 import numpy as np
 
@@ -46,6 +49,7 @@ class Interaction:
     kind: str                         # "pk" or "pd"
     advice: str
     evidence: str
+    followup_days: tuple[int, ...] = ()   # check levels after starting (days)
 
     def sample(self, n: int, rng: np.random.Generator) -> np.ndarray:
         """Log-normal draws with the stated median and 90% range."""
@@ -169,6 +173,18 @@ CATALOG: dict[str, Interaction] = {i.key: i for i in [
         "high doses. Monitor neurological status.",
         "US lithium label (pharmacodynamic)."),
     Interaction(
+        "mra", "Mineralocorticoid-receptor antagonist",
+        ("spironolactone", "eplerenone"),
+        0.90, (0.70, 1.05), 7, "pk",
+        "Case reports of higher levels, and hyperkalaemia with RAAS agents; check a level after starting.",
+        "Case reports only; magnitude uncertain."),
+    Interaction(
+        "cni", "Calcineurin inhibitor (nephrotoxic)",
+        ("ciclosporin", "cyclosporine", "tacrolimus"),
+        1.0, (1.0, 1.0), 0, "pd",
+        "Nephrotoxic: tighter renal and level monitoring; involve the prescribing specialist.",
+        "Additive nephrotoxicity; no controlled lithium PK data."),
+    Interaction(
         "iodide", "Iodide preparations",
         ("potassium iodide",),
         1.0, (1.0, 1.0), 0, "pd",
@@ -176,16 +192,81 @@ CATALOG: dict[str, Interaction] = {i.key: i for i in [
         "US lithium label."),
 ]}
 
+# Check levels after starting (days). ACE inhibitors, ARBs and loop diuretics get a
+# day-28 level too: their toxicity risk is concentrated in the first month.
+_FOLLOWUP = {"thiazide": (5, 14), "acei": (7, 28), "arb": (7, 28), "nsaid": (5,), "loop": (7, 28),
+             "sglt2": (10,), "xanthine": (5,), "acetazolamide": (5,), "metronidazole": (5,), "mra": (7,)}
+CATALOG = {k: replace(v, followup_days=_FOLLOWUP.get(k, ())) for k, v in CATALOG.items()}
+
 _INDEX = {name: key for key, it in CATALOG.items() for name in it.examples}
+
+# Common Australian/UK/US brand names -> ingredients (illustrative; production use needs AMT / SNOMED CT-AU
+# or RxNorm ingredient mapping rather than a hand list).
+BRANDS = {
+    "nurofen": "ibuprofen", "brufen": "ibuprofen", "advil": "ibuprofen", "voltaren": "diclofenac",
+    "naprosyn": "naproxen", "naprogesic": "naproxen", "celebrex": "celecoxib", "mobic": "meloxicam",
+    "arcoxia": "etoricoxib", "indocid": "indomethacin", "toradol": "ketorolac",
+    "coversyl": "perindopril", "coversyl plus": "perindopril/indapamide", "tritace": "ramipril",
+    "renitec": "enalapril", "zestril": "lisinopril", "accupril": "quinapril",
+    "avapro": "irbesartan", "karvea": "irbesartan", "karvezide": "irbesartan/hydrochlorothiazide",
+    "avapro hct": "irbesartan/hydrochlorothiazide", "atacand": "candesartan",
+    "atacand plus": "candesartan/hydrochlorothiazide", "micardis": "telmisartan",
+    "micardis plus": "telmisartan/hydrochlorothiazide", "cozaar": "losartan",
+    "hyzaar": "losartan/hydrochlorothiazide", "diovan": "valsartan", "co-diovan": "valsartan/hydrochlorothiazide",
+    "olmetec": "olmesartan", "natrilix": "indapamide", "hygroton": "chlortalidone",
+    "dithiazide": "hydrochlorothiazide", "lasix": "furosemide", "urex": "furosemide", "burinex": "bumetanide",
+    "aldactone": "spironolactone", "inspra": "eplerenone", "jardiance": "empagliflozin",
+    "forxiga": "dapagliflozin", "invokana": "canagliflozin", "flagyl": "metronidazole", "diamox": "acetazolamide",
+    "tegretol": "carbamazepine", "isoptin": "verapamil", "cardizem": "diltiazem", "norvasc": "amlodipine",
+}
+_SALTS = {"arginine", "erbumine", "sodium", "potassium", "hydrochloride", "hcl", "maleate", "besylate",
+          "mesylate", "cilexetil", "medoxomil", "tromethamine", "sr", "cr", "xr", "mr", "er", "tablets", "tablet",
+          "capsules", "capsule", "mg"}
+# Checked and not expected to change lithium levels (label or study data), so not reported as unknown.
+KNOWN_NON_INTERACTING = {"paracetamol", "acetaminophen", "nefazodone", "gabapentin", "venlafaxine", "paroxetine",
+                         "aripiprazole", "ziprasidone", "levothyroxine", "atorvastatin", "metformin"}
+
+
+def _ingredients(drug: str) -> list[str]:
+    text = drug.strip().lower()
+    text = BRANDS.get(text, text)
+    out = []
+    for part in re.split(r"\s*(?:/|\+|,|&|\band\b|\bwith\b)\s*", text):
+        part = BRANDS.get(part.strip(), part.strip())
+        for sub in re.split(r"\s*/\s*", part):
+            words = [w for w in re.findall(r"[a-z-]+", sub) if w not in _SALTS]
+            if words:
+                out.append(" ".join(words))
+    return out
+
+
+def lookup_all(drug: str) -> list[Interaction]:
+    """Every interaction implied by a drug name, including combination products."""
+    found: list[Interaction] = []
+    for ing in _ingredients(drug):
+        key = _INDEX.get(ing) or next((k for name, k in _INDEX.items() if name in ing.split()), None)
+        if key and CATALOG[key] not in found:
+            found.append(CATALOG[key])
+    return found
 
 
 def lookup(drug: str) -> Interaction | None:
-    return CATALOG.get(_INDEX.get(drug.strip().lower(), ""))
+    found = lookup_all(drug)
+    return found[0] if found else None
 
 
-def screen(drugs: Sequence[str]) -> list[Interaction]:
-    found = [lookup(d) for d in drugs]
-    return [f for f in found if f is not None]
+def screen(drugs: Sequence[str]) -> tuple[list[Interaction], list[str]]:
+    """Returns (interactions found, names not recognised). Unrecognised names
+    must be shown to the clinician rather than silently passed."""
+    found: list[Interaction] = []
+    unknown: list[str] = []
+    for d in drugs:
+        hits = lookup_all(d)
+        if hits:
+            found += [h for h in hits if h not in found]
+        elif " ".join(_ingredients(d)) not in KNOWN_NON_INTERACTING:
+            unknown.append(d)
+    return found, unknown
 
 
 @dataclass
@@ -196,6 +277,14 @@ class WhatIf:
     p_above_1: float
     p_above_1_2: float
     adjusted: "Recommendation | None" = None   # dose that keeps the target with the new drug
+    all_interactions: list = field(default_factory=list)
+
+    def followup_tasks(self, start_h: float) -> list[tuple[float, str]]:
+        """Check levels after starting, e.g. day 7 and day 28 for ACE inhibitors."""
+        hits = self.all_interactions or [self.interaction]
+        days = sorted({d for h in hits for d in h.followup_days})
+        names = " + ".join(h.label for h in hits)
+        return [(start_h + 24.0 * d, f"lithium level + U&E: day {d} after starting {names}") for d in days]
 
 
 def what_if(post: Posterior, admins: Sequence[Administration], drug: str, t: float | None = None,
@@ -203,15 +292,19 @@ def what_if(post: Posterior, admins: Sequence[Administration], drug: str, t: flo
             target: tuple[float, float] = (0.6, 0.8)) -> WhatIf | None:
     """Forecast this patient's 12-hour level if ``drug`` is added with no lithium
     change, and (given a ``product``) the lithium dose that would compensate."""
-    it = lookup(drug)
-    if it is None:
+    hits = lookup_all(drug)
+    if not hits:
         return None
+    pk_hits = [h for h in hits if h.kind == "pk"]
+    it = pk_hits[0] if pk_hits else hits[0]
     rng = rng or np.random.default_rng(11)
     if t is None:
         t = max([lv.time for lv in post.case.levels], default=0.0)
     daily = sum(a.mmol for a in admins)
     seed = int(rng.integers(1 << 31))
-    mult = it.sample(n, rng)
+    mult = np.ones(n)
+    for h in hits:
+        mult = mult * h.sample(n, rng)
     # Identical posterior draws before and after, so the difference is the interaction alone.
     before = daily * li12_per_unit(post, admins, t, n, np.random.default_rng(seed))
     after = daily * li12_per_unit(post, admins, t, n, np.random.default_rng(seed), cl_mult=mult)
@@ -222,4 +315,4 @@ def what_if(post: Posterior, admins: Sequence[Administration], drug: str, t: flo
         adjusted = recommend(post, product, target=target, template=template, current=admins, t=t,
                              cl_mult=mult, n=n, rng=np.random.default_rng(seed), max_step_ratio=2.0)
     return WhatIf(it, summarise(before), summarise(after),
-                  float(np.mean(after > 1.0)), float(np.mean(after > 1.2)), adjusted)
+                  float(np.mean(after > 1.0)), float(np.mean(after > 1.2)), adjusted, hits)

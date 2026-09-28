@@ -98,7 +98,8 @@ def egfr_trend(times_years: np.ndarray, egfr: np.ndarray, age_now: float | None 
     stage = ckd_stage(latest)
 
     if slope < -5.0 and hi < -1.0:
-        flags.append("rapid decline: > 5 mL/min/1.73m2/yr (KDIGO)")
+        flags.append("rapid decline: > 5 mL/min/1.73m2/yr (KDIGO); confirm with a creatinine-cystatin C eGFR "
+                     "before acting on it")
     elif slope < -2.0:
         flags.append("decline faster than expected for age (~1 mL/min/1.73m2/yr): monitor dose and levels more "
                      "often and assess the rate of deterioration (NICE CG185)")
