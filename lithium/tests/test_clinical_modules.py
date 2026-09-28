@@ -12,6 +12,7 @@ from lithos.renal import crcl_cockcroft_gault, egfr_ckd_epi_2021, egfr_trend
 from lithos.safety import hours_to_below, triage
 from lithos.schedule import DAY, MONTH, Context, guideline_tasks, plan
 from lithos.units import PRODUCTS, mg_to_mmol, mmol_to_mg
+from lithos import pregnancy
 
 MODEL = get_model()
 LITHICARB = PRODUCTS["Lithicarb 250 mg"]
@@ -32,6 +33,19 @@ def test_salt_conversions():
     assert mmol_to_mg(mg_to_mmol(450)) == pytest.approx(450)
 
 
+def test_citrate_pack_mmol_is_authoritative():
+    assert PRODUCTS["Li-Liquid 509 mg/5 mL"].mmol == 5.4
+    assert PRODUCTS["Lithium citrate oral solution 8 mEq/5 mL"].mmol == 8.0
+
+
+def test_pregnancy_curves():
+    # Westin: -34% dose-adjusted level at week 34 -> clearance x ~1.50
+    assert 1.0 / pregnancy.cl_multiplier(gest_week=34) == pytest.approx(0.665, abs=0.01)
+    # Wesseloo: second-trimester nadir of -36%
+    assert 1.0 / pregnancy.cl_multiplier(gest_week=20, curve="wesseloo") == pytest.approx(0.64, abs=0.01)
+    assert pregnancy.cl_multiplier(postpartum_week=1) < 1.0
+
+
 # --- renal -----------------------------------------------------------------
 
 def test_ckd_epi_2021_reference_value():
@@ -41,6 +55,10 @@ def test_ckd_epi_2021_reference_value():
 
 def test_cockcroft_gault_reference_value():
     assert crcl_cockcroft_gault(88.42, 60, "M", 70) == pytest.approx(77.8, abs=0.1)
+
+
+def test_egfr_trend_needs_three_values_over_90_days():
+    assert "trend needs" in " ".join(egfr_trend(np.array([0.0, 0.1]), np.array([80.0, 78.0])).flags)
 
 
 def test_egfr_trend_flags_rapid_decline_only_when_present():
@@ -162,7 +180,7 @@ def test_initiation_plan_leads_in_below_maintenance():
 
 def test_interaction_lookup_and_direction():
     assert interactions.lookup("Hydrochlorothiazide").key == "thiazide"
-    assert interactions.lookup("amlodipine") is None
+    assert interactions.lookup("paracetamol") is None
     cov = cov_typical()
     admins = [Administration(21, 750)]
     doses = expand(21, 24 * 40, admins)
@@ -232,6 +250,44 @@ def test_hours_to_below_matches_first_order_decay():
     obs = float(simulate(doses, truth, [t])[0])
     post = fit(MODEL, Case(cov, doses, [Level(t, obs)]))
     s = hours_to_below(post, t, observed=1.8, n=200)
-    k = post.params_at(post.eta(post.mode), post.drift_fitted(post.mode, t), t)
-    expected = np.log(1.8) * k.v1 / k.cl
-    assert s.median == pytest.approx(expected, rel=0.15)
+    p = post.params_at(post.eta(post.mode), post.drift_fitted(post.mode, t), t)
+    expected = np.log(1.8) * p.terminal_half_life() / np.log(2)   # post-distribution decline
+    assert s.median == pytest.approx(expected, rel=0.2)
+
+
+# --- behaviour added with the ensemble -----------------------------------------
+
+def test_ensemble_weights_are_a_distribution_and_follow_the_data():
+    from lithos.bayes import Ensemble, individualise
+    from lithos.models import METHANEETHORN_2019, RENAL_2CMT, get_engine
+    cov = cov_typical(age_at_t0=70, creatinine=[(0, 160)])     # poor kidney function
+    admins = [Administration(21, 500)]
+    doses = expand(21, 24 * 40, admins)
+    truth = RENAL_2CMT.individual(cov(0), {})                 # truth follows the kidney-aware model
+    lv = [Level(24 * d + 9, float(simulate(doses, truth, [24 * d + 9])[0])) for d in (20, 35)]
+    ens = individualise(Case(cov, doses, lv), get_engine())
+    assert isinstance(ens, Ensemble)
+    assert ens.weights.sum() == pytest.approx(1.0)
+    names = [m.model.name for m in ens.members]
+    assert ens.weights[names.index(RENAL_2CMT.name)] > ens.weights[names.index(METHANEETHORN_2019.name)]
+
+
+def test_uninformative_sample_prompts_a_repeat_not_a_dose_change():
+    from lithos.bayes import individualise
+    from lithos.models import get_engine
+    cov = cov_typical(age_at_t0=58, weight=72, height=163, creatinine=[(0, 82)])
+    admins = [Administration(8.0, 500), Administration(20.0, 500)]
+    doses = expand(8.0, 24 * 40 + 8.1, admins)
+    t = 24 * 40 + 10.0                                          # 2 h after the morning dose
+    post = individualise(Case(cov, doses, [Level(t, 1.24, timing_sd=0.25)]), get_engine())
+    rec = recommend(post, LITHICARB, template="bd", current=admins)
+    assert rec.repeat_first
+    assert rec.chosen.daily_mg == 1000
+
+
+def test_starting_dose_is_more_conservative_than_titration_rule():
+    prior = fit(MODEL, Case(cov_typical(), [], []))
+    start = initiation_plan(prior, LITHICARB)                   # P(> 1.0) <= 5%
+    titr = recommend(prior, LITHICARB, t=0.0, high=1.2)          # P(> 1.2) <= 5%
+    assert start.maintenance.daily_mg <= titr.chosen.daily_mg
+    assert start.maintenance.p_high <= 0.05

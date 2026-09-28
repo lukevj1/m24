@@ -7,10 +7,27 @@ risk, in the weeks when relapse risk is also highest). The engine represents
 this as a gestation-dependent clearance multiplier and turns it into a
 week-by-week dose and monitoring plan that the perinatal team can review.
 
-The default curve is derived from the dose-corrected level changes reported
-in observational cohorts (see ``ANCHORS`` and docs/EVIDENCE.md); individual
-patients deviate from it, which is why levels are still checked every 4 weeks
-and weekly near term, and why every level updates the forecast.
+Two published descriptions of the pregnancy curve disagree and both are
+offered (docs/EVIDENCE.md):
+
+* ``westin`` (default): dose-adjusted levels fall log-linearly by 1.2% per
+  gestational week (-7% at week 6, -22% at week 20, -34% at week 34), so
+  clearance rises ~1.2%/week; doses generally need +50% by the third
+  trimester (Westin et al. 2017, BMJ Open, full text).
+* ``wesseloo``: trimester means of -24%, -36% (nadir) and -21% vs
+  preconception, i.e. a partial third-trimester rebound (Wesseloo et al.
+  2017, 1101 levels from 113 pregnancies).
+
+After delivery clearance falls back within days (a steep rise in
+dose-adjusted levels by day 4), and levels run ~9-11% above preconception
+postpartum (Wesseloo; Imaz 2025). Individual women deviate from any curve,
+which is why levels are still checked every 4 weeks, weekly from 36 weeks and
+within 24 h of birth, and why every level updates the forecast.
+
+Delivery management is contested and is surfaced, not hidden: US labelling
+advises reducing or stopping lithium 2-3 days before expected delivery,
+whereas Molenaar et al. (2021, 233 perinatal levels) found no intrapartum
+rise in dose-corrected levels and advise against pre-delivery reduction.
 """
 
 from __future__ import annotations
@@ -26,23 +43,25 @@ from .units import Product
 
 WEEK = 7 * 24.0
 
-# (gestational week, dose-corrected level change vs pre-conception). Filled
-# from Wesseloo et al. 2017 (trimester means) - see docs/EVIDENCE.md.
-ANCHORS = [(0.0, 0.00), (6.0, -0.10), (10.0, -0.24), (20.0, -0.36), (32.0, -0.30), (39.0, -0.21)]
-# Postpartum: level-to-dose ratio rises back above baseline within days of
-# delivery, then settles.
-POSTPARTUM = [(0.0, +0.09), (2.0, +0.05), (6.0, 0.0)]  # (weeks after delivery, level change)
+# Wesseloo 2017 trimester means placed at mid-trimester weeks.
+WESSELOO = [(0.0, 0.00), (7.0, -0.24), (20.0, -0.36), (33.0, -0.21), (41.0, -0.21)]
+WESTIN_SLOPE = 0.012  # log dose-adjusted level per gestational week (Westin 2017)
+# Postpartum level change vs preconception (weeks after delivery). The +9%
+# plateau is from Wesseloo/Imaz; its duration beyond the first weeks is an
+# assumption.
+POSTPARTUM = [(0.0, +0.09), (8.0, +0.09), (12.0, 0.0)]
 
 
-def cl_multiplier(gest_week: float | None = None, postpartum_week: float | None = None) -> float:
-    """Clearance relative to pre-conception (level change x -> CL x 1/(1+x))."""
+def cl_multiplier(gest_week: float | None = None, postpartum_week: float | None = None,
+                  curve: str = "westin") -> float:
+    """Clearance relative to pre-conception (a level change x means CL x 1/(1+x))."""
     if postpartum_week is not None:
         w, x = zip(*POSTPARTUM)
-        change = float(np.interp(postpartum_week, w, x))
-    else:
-        w, x = zip(*ANCHORS)
-        change = float(np.interp(gest_week, w, x))
-    return 1.0 / (1.0 + change)
+        return 1.0 / (1.0 + float(np.interp(postpartum_week, w, x)))
+    if curve == "westin":
+        return float(np.exp(WESTIN_SLOPE * max(gest_week, 0.0)))
+    w, x = zip(*WESSELOO)
+    return 1.0 / (1.0 + float(np.interp(gest_week, w, x)))
 
 
 def effects(conception_h: float, delivery_h: float, step_weeks: float = 1.0) -> list[Effect]:
@@ -51,7 +70,7 @@ def effects(conception_h: float, delivery_h: float, step_weeks: float = 1.0) -> 
     t = conception_h
     while t < delivery_h:
         gw = (t - conception_h) / WEEK
-        out.append(Effect(t, min(t + step_weeks * WEEK, delivery_h), cl_multiplier(gest_week=gw),
+        out.append(Effect(t, min(t + step_weeks * WEEK, delivery_h), cl_multiplier(gest_week=gw, curve=curve),
                           label=f"pregnancy week {gw:.0f}"))
         t += step_weeks * WEEK
     t = delivery_h
@@ -84,8 +103,9 @@ class PregnancyStep:
 
 
 def plan(pre_pregnancy: Posterior, product: Product, current: list[Administration], *,
-         target: tuple[float, float] = (0.6, 0.8), weeks: tuple[int, ...] = (0, 8, 12, 16, 20, 24, 28, 32, 36),
-         postpartum_weeks: tuple[int, ...] = (0, 1, 2, 4, 6)) -> list[PregnancyStep]:
+         target: tuple[float, float] = (0.6, 0.8), postpartum_target: tuple[float, float] = (0.8, 1.0),
+         weeks: tuple[int, ...] = (0, 8, 12, 16, 20, 24, 28, 32, 36),
+         postpartum_weeks: tuple[int, ...] = (0, 1, 2, 4, 6), curve: str = "westin") -> list[PregnancyStep]:
     """Forecast the dose that keeps the 12-h level in ``target`` through
     pregnancy and after delivery, starting from the pre-pregnancy posterior.
 
@@ -99,7 +119,7 @@ def plan(pre_pregnancy: Posterior, product: Product, current: list[Administratio
     steps = []
     clocks = [a.clock for a in current]
     for gw in weeks:
-        m = cl_multiplier(gest_week=gw)
+        m = cl_multiplier(gest_week=gw, curve=curve)
         rec = recommend(pre_pregnancy, product, target=target, template=clocks, current=current, t=t,
                         cl_mult=_mult_samples(m, n, rng), max_step_ratio=2.0, n=n)
         steps.append(PregnancyStep(gw, None, m, rec.chosen.describe(product), rec.chosen.daily_mg,
@@ -107,7 +127,8 @@ def plan(pre_pregnancy: Posterior, product: Product, current: list[Administratio
     late = steps[-1]
     for pw in postpartum_weeks:
         m = cl_multiplier(postpartum_week=pw)
-        rec = recommend(pre_pregnancy, product, target=target, template=clocks, current=current, t=t,
+        tgt = postpartum_target if pw < 4 else target
+        rec = recommend(pre_pregnancy, product, target=tgt, template=clocks, current=current, t=t,
                         cl_mult=_mult_samples(m, n, rng), max_step_ratio=2.0, n=n)
         steps.append(PregnancyStep(None, pw, m, rec.chosen.describe(product), rec.chosen.daily_mg,
                                    str(rec.chosen.li12)))

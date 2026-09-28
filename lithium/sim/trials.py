@@ -20,12 +20,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from lithos.bayes import fit
+from lithos.bayes import individualise
 from lithos.case import Administration, Case, Level, expand, regimen_cycle
 from lithos.dosing import initiation_plan, recommend
 from lithos.forecast import standardized_li12
 from lithos.interactions import CATALOG, what_if
-from lithos.models import PopModel
+from lithos.models import PopModel  # noqa: F401  (engine may be a PopModel or an ensemble spec)
 from lithos.units import PRODUCTS
 
 from .population import VirtualPatient, measure, true_level, true_li12
@@ -149,12 +149,13 @@ def usual_care(vp: VirtualPatient, truth: PopModel, rng: np.random.Generator, st
     return _titration_outcomes(vp, truth, [tuple(p) for p in periods], tests, confirmed)
 
 
-def model_informed(vp: VirtualPatient, truth: PopModel, engine: PopModel, rng: np.random.Generator) -> dict:
+def model_informed(vp: VirtualPatient, truth: PopModel, engine, rng: np.random.Generator,
+                   high: float = 1.2) -> dict:
     """Model-chosen start (brief lead-in), levels at convenient times with the
     time recorded, Bayesian update, confirm with two consecutive in-range
     no-change decisions."""
     cov = vp.cov
-    prior = fit(engine, Case(cov, [], []))
+    prior = individualise(Case(cov, [], []), engine)
     ip = initiation_plan(prior, PRODUCT, target=TARGET, lead_in_days=3, n=N_DRAWS)
     lead_mg = ip.lead_in[0].mg
     mg = ip.maintenance.daily_mg
@@ -170,10 +171,13 @@ def model_informed(vp: VirtualPatient, truth: PopModel, engine: PopModel, rng: n
         obs = measure(true_level(vp, truth, adherence.update(prescribed), t), rng)
         tests += 1
         levels.append(Level(t, obs, timing_sd=0.25))
-        post = fit(engine, Case(cov, prescribed, levels))
+        post = individualise(Case(cov, prescribed, levels), engine)
         current = [Administration(CLOCK, mg)]
-        rec = recommend(post, PRODUCT, target=TARGET, current=current, n=N_DRAWS,
+        rec = recommend(post, PRODUCT, target=TARGET, current=current, n=N_DRAWS, high=high,
                         rng=np.random.default_rng(int(rng.integers(1 << 31))))
+        if rec.repeat_first:
+            day += 3            # a better-timed level soon; no dose change, no confirmation credit
+            continue
         if rec.change == "no change":
             streak += 1
             if streak == 2:
@@ -214,15 +218,15 @@ def any_time(vp: VirtualPatient, truth: PopModel, engine: PopModel, rng: np.rand
     truth12 = true_level(vp, truth, taken, t12)
 
     out = {"hours": hrs, "truth12": truth12, "naive": obs, "mg": mg}
-    post = fit(engine, Case(vp.cov, prescribed, [Level(t, obs, timing_sd=0.25)]))
-    pred = np.array([post.predict([t12], u)[0] for u in post.sample(400, rng)])
+    post = individualise(Case(vp.cov, prescribed, [Level(t, obs, timing_sd=0.25)]), engine)
+    pred = post.predict_draws([t12], 400, rng)[:, 0]
     out.update(engine_med=float(np.median(pred)), engine_lo=float(np.percentile(pred, 5)),
                engine_hi=float(np.percentile(pred, 95)))
     # Same, with one earlier level (day 45, drawn at a convenient time) in the record.
     t_hist = 44 * 24.0 + CLOCK + realistic_hours_after_evening_dose(rng)
     hist_obs = measure(true_level(vp, truth, taken, t_hist), rng)
-    post2 = fit(engine, Case(vp.cov, prescribed, [Level(t_hist, hist_obs, 0.25), Level(t, obs, 0.25)]))
-    pred2 = np.array([post2.predict([t12], u)[0] for u in post2.sample(400, rng)])
+    post2 = individualise(Case(vp.cov, prescribed, [Level(t_hist, hist_obs, 0.25), Level(t, obs, 0.25)]), engine)
+    pred2 = post2.predict_draws([t12], 400, rng)[:, 0]
     out.update(hist_med=float(np.median(pred2)), hist_lo=float(np.percentile(pred2, 5)),
                hist_hi=float(np.percentile(pred2, 95)))
     return out
@@ -243,7 +247,7 @@ def thiazide(vp: VirtualPatient, truth: PopModel, engine: PopModel, rng: np.rand
     for d in (60, 150):
         t = (d - 1) * 24.0 + CLOCK + realistic_hours_after_evening_dose(rng)
         levels.append(Level(t, measure(true_level(vp, truth, taken, t), rng), 0.25))
-    post = fit(engine, Case(vp.cov, prescribed, levels))
+    post = individualise(Case(vp.cov, prescribed, levels), engine)
     now = levels[-1].time
     wi = what_if(post, admins, "hydrochlorothiazide", t=now, n=N_DRAWS, product=PRODUCT,
                  rng=np.random.default_rng(int(rng.integers(1 << 31))))
@@ -273,14 +277,15 @@ def early_sampling(vp: VirtualPatient, truth: PopModel, engine: PopModel, rng: n
     taken = vp.take(doses, rng)
     t_prev = 28 * 24.0 + CLOCK + 12.0
     prev = Level(t_prev, measure(true_level(vp, truth, taken, t_prev), rng), 0.25)
-    target_truth = true_li12(vp, truth, regimen_cycle([Administration(CLOCK, mg_b)]), change)
     out = []
     for d in days:
         t = change + 24.0 * (d - 1) + 12.0      # 12 h after the d-th dose on the new regimen
+        # truth = steady-state 12-h level on the new dose at the time of sampling
+        target_truth = true_li12(vp, truth, regimen_cycle([Administration(CLOCK, mg_b)]), t)
         obs = measure(true_level(vp, truth, taken, t), rng)
         row = {"day": d, "truth": target_truth, "naive": obs}
         for label, lv in (("with_history", [prev, Level(t, obs, 0.25)]), ("no_history", [Level(t, obs, 0.25)])):
-            post = fit(engine, Case(vp.cov, doses, lv))
+            post = individualise(Case(vp.cov, doses, lv), engine)
             s = standardized_li12(post, [Administration(CLOCK, mg_b)], t=t, n=600,
                                   rng=np.random.default_rng(int(rng.integers(1 << 31))))
             row[label] = s.median

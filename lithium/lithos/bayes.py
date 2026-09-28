@@ -118,6 +118,21 @@ class Posterior:
         cov = self.case.covariates(t)
         return self.model.individual(cov, eta, drift, self.case.cl_mult(t) * cl_mult, self.case.v_mult(t))
 
+    def param_draws(self, n: int, t: float, rng: np.random.Generator | None = None,
+                    cl_mult: float | np.ndarray = 1.0, sir: bool = False) -> list[Params]:
+        """Posterior draws of the individual parameters in force at time t
+        (optionally with an extra, possibly per-draw, clearance multiplier)."""
+        mult = np.broadcast_to(np.asarray(cl_mult, dtype=float), (n,))
+        return [self.params_at(eta, d, t, cl_mult=float(m)) for (eta, d), m in zip(self.draw(n, t, rng, sir), mult)]
+
+    def predict_draws(self, times, n: int, rng: np.random.Generator | None = None, doses=None) -> np.ndarray:
+        """Posterior draws of the concentration-time curve (n x len(times))."""
+        return np.array([self.predict(times, u, doses=doses) for u in self.sample(n, rng)])
+
+    @property
+    def summary_model(self) -> str:
+        return f"{self.model.name} [{self.model.status}]"
+
     def sample(self, n: int, rng: np.random.Generator | None = None, sir: bool = False) -> np.ndarray:
         rng = rng or np.random.default_rng(0)
         if not sir or self.n_levels == 0:
@@ -288,3 +303,92 @@ def _level_diagnostics(post: Posterior, levels, t_obs, y, tsd, dist_sd) -> list[
         out.append({"time": lv.time, "value": lv.value, "fitted": float(fi), "z": float(z),
                     "hours_since_dose": since, "slope_per_h": float(dfi), "flags": flags})
     return out
+
+
+@dataclass
+class Ensemble:
+    """Bayesian model averaging over several population priors.
+
+    Each member is fitted separately; its posterior probability is
+    proportional to its prior weight times its Laplace marginal likelihood
+    (evidence). Forecasts mix the members' posterior draws in proportion.
+    """
+
+    members: list[Posterior]
+    weights: np.ndarray
+
+    @property
+    def case(self) -> Case:
+        return self.members[0].case
+
+    @property
+    def best(self) -> Posterior:
+        return self.members[int(np.argmax(self.weights))]
+
+    @property
+    def model(self) -> PopModel:
+        return self.best.model
+
+    @property
+    def n_levels(self) -> int:
+        return self.best.n_levels
+
+    @property
+    def diagnostics(self) -> dict:
+        return self.best.diagnostics
+
+    @property
+    def converged(self) -> bool:
+        return all(m.converged for m in self.members)
+
+    @property
+    def summary_model(self) -> str:
+        parts = [f"{m.model.name} {w:.0%}" for m, w in sorted(zip(self.members, self.weights),
+                                                             key=lambda mw: -mw[1])]
+        return "ensemble: " + ", ".join(parts)
+
+    def clearance_history(self) -> list[tuple[float, float]]:
+        return self.best.clearance_history()
+
+    def _split(self, n: int, rng: np.random.Generator) -> np.ndarray:
+        return rng.multinomial(n, self.weights)
+
+    def param_draws(self, n: int, t: float, rng: np.random.Generator | None = None,
+                    cl_mult: float | np.ndarray = 1.0, sir: bool = False) -> list[Params]:
+        rng = rng or np.random.default_rng(0)
+        mult = np.broadcast_to(np.asarray(cl_mult, dtype=float), (n,))
+        out: list[Params] = []
+        i = 0
+        for m, k in zip(self.members, self._split(n, rng)):
+            if k:
+                out += m.param_draws(int(k), t, rng, cl_mult=mult[i:i + k], sir=sir)
+                i += k
+        return out
+
+    def predict_draws(self, times, n: int, rng: np.random.Generator | None = None, doses=None) -> np.ndarray:
+        rng = rng or np.random.default_rng(0)
+        parts = [m.predict_draws(times, int(k), rng, doses=doses)
+                 for m, k in zip(self.members, self._split(n, rng)) if k]
+        return np.vstack(parts)
+
+    def predict(self, times, u=None, doses=None) -> np.ndarray:
+        """Model-averaged point prediction (weighted mean of member MAP predictions)."""
+        preds = np.array([m.predict(times, doses=doses) for m in self.members])
+        return self.weights @ preds
+
+
+def individualise(case: Case, engine) -> "Posterior | Ensemble":
+    """Fit ``engine`` to ``case``.
+
+    ``engine`` is a PopModel, or a list of (PopModel, prior weight) pairs for
+    model averaging (see :func:`lithos.models.get_engine`).
+    """
+    if isinstance(engine, PopModel):
+        return fit(engine, case)
+    if len(engine) == 1:
+        return fit(engine[0][0], case)
+    members = [fit(m, case) for m, _ in engine]
+    prior = np.array([w for _, w in engine], dtype=float)
+    logw = np.log(prior / prior.sum()) + np.array([m.log_evidence for m in members])
+    w = np.exp(logw - logw.max())
+    return Ensemble(members, w / w.sum())

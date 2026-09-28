@@ -9,10 +9,18 @@ we are, and what dose would keep them in range. The alert can then fire in the
 GP's prescribing software at the moment the interacting drug is chosen.
 
 Pharmacokinetic effects are multiplicative changes in lithium clearance with an
-uncertainty range (5th-95th percentile). Values are summarised from the
-literature cited in ``evidence`` and should be refined as data accrue;
-pharmacodynamic interactions (neurotoxicity, serotonin toxicity) carry advice
-but no clearance change.
+uncertainty range (about the 5th-95th percentile). Values are summarised from
+the sources in ``evidence`` (docs/EVIDENCE.md) and should be refined as data
+accrue; pharmacodynamic interactions (neurotoxicity, serotonin toxicity) carry
+advice but no clearance change.
+
+Two kinds of evidence point in different directions and both are used. The
+pharmacokinetic literature gives thiazides the largest mean level rise, while
+the epidemiology in older adults gives ACE inhibitors and loop diuretics the
+largest toxicity-admission risk in the first month (thiazides and NSAIDs were
+not independently associated). So thiazides call for dose arithmetic, and ACE
+inhibitors and loop diuretics call for a time-anchored first-month monitoring
+plan whatever the forecast says.
 """
 
 from __future__ import annotations
@@ -60,91 +68,112 @@ CATALOG: dict[str, Interaction] = {i.key: i for i in [
         "thiazide", "Thiazide / thiazide-like diuretic",
         ("hydrochlorothiazide", "chlorthalidone", "chlortalidone", "indapamide", "bendroflumethiazide",
          "chlorothiazide", "metolazone"),
-        0.72, (0.55, 0.90), 5, "pk",
-        "Avoid if possible. If essential: reduce lithium dose to keep the forecast in range, "
-        "check a level 5-7 days after starting and after any diuretic dose change.",
-        "Clearance falls ~25-40% (levels rise ~25-50%) via proximal sodium/lithium reabsorption; "
-        "see docs/EVIDENCE.md."),
+        0.76, (0.60, 0.92), 5, "pk",
+        "Avoid if possible. If essential: reduce the lithium dose to keep the forecast in range and check a "
+        "level 5-7 days after starting and after any diuretic dose change.",
+        "Levels commonly rise 25-40% (Finley 2016 review, secondary); renal lithium clearance fell 24% on "
+        "thiazide therapy; HCTZ raised serum lithium more than furosemide or placebo in a crossover study "
+        "(Crabtree 1991). Not independently associated with toxicity admission in older adults (Juurlink 2004), "
+        "plausibly because the interaction is well known and managed."),
     Interaction(
         "acei", "ACE inhibitor",
         ("ramipril", "perindopril", "enalapril", "lisinopril", "captopril", "trandolapril",
          "quinapril", "fosinopril"),
-        0.78, (0.55, 1.00), 14, "pk",
-        "Prefer an alternative antihypertensive (e.g. a dihydropyridine calcium-channel blocker). "
-        "If started: level within 1-2 weeks, then again at ~4 weeks; watch older patients closely.",
-        "Levels rise variably (0 to >50%); onset can be delayed weeks; ~7-fold higher risk of "
-        "hospitalisation for toxicity in older adults in the first month (population data); see docs/EVIDENCE.md."),
+        0.75, (0.55, 1.00), 14, "pk",
+        "Prefer another antihypertensive where possible. If started: level within 1-2 weeks and again at "
+        "about 4 weeks; the first month is the danger window, especially in older adults.",
+        "Steady-state levels rose 36.1% and clearance fell 25.5% after starting an ACE inhibitor (Finley 1996, "
+        "n=20; 4 with toxicity symptoms). Toxicity admission RR 7.6 (2.6-22.0) within one month of starting in "
+        "people aged 66+ (Juurlink 2004)."),
     Interaction(
         "arb", "Angiotensin-II receptor blocker",
         ("candesartan", "irbesartan", "losartan", "telmisartan", "valsartan", "olmesartan"),
-        0.82, (0.60, 1.00), 14, "pk",
+        0.80, (0.60, 1.00), 14, "pk",
         "As for ACE inhibitors: level within 1-2 weeks of starting and after dose changes.",
-        "Case reports and small series suggest rises similar to ACE inhibitors; weaker evidence."),
+        "Case reports with losartan, valsartan and candesartan; the candesartan label reports increased lithium "
+        "levels. No controlled effect size found."),
     Interaction(
         "nsaid", "NSAID (incl. COX-2 selective)",
         ("ibuprofen", "naproxen", "diclofenac", "indometacin", "indomethacin", "meloxicam",
-         "celecoxib", "etoricoxib", "piroxicam", "ketorolac", "parecoxib"),
-        0.80, (0.60, 0.98), 4, "pk",
-        "Prefer paracetamol. If an NSAID is needed: shortest course, consider a dose reduction, "
-        "level after 4-5 days; include over-the-counter ibuprofen in patient education.",
-        "Levels rise ~10-60% depending on agent and person (indometacin, diclofenac at the high end); "
-        "low-dose aspirin and sulindac have little effect."),
+         "celecoxib", "etoricoxib", "piroxicam", "ketorolac", "parecoxib", "etodolac", "nabumetone"),
+        0.85, (0.62, 1.00), 4, "pk",
+        "Prefer paracetamol. If an NSAID is needed, prefer regular to as-needed use so levels are predictable, "
+        "and check a level after 4-5 days (NICE CG185: monthly until stable, then 3-monthly). Include "
+        "over-the-counter ibuprofen in patient education.",
+        "US NSAID class labelling: mean minimum lithium concentration +15%, renal clearance about -20%; celecoxib "
+        "+17%; meloxicam about +20%; indometacin and piroxicam 'significantly' more; case reports up to ~100%. "
+        "Low-dose aspirin and sulindac have little effect."),
     Interaction(
         "loop", "Loop diuretic",
         ("furosemide", "frusemide", "bumetanide", "torasemide", "torsemide", "ethacrynic acid"),
-        0.90, (0.70, 1.05), 5, "pk",
-        "Smaller direct effect than thiazides, but volume depletion drives toxicity: level within a week, "
-        "reinforce fluid advice, extra caution in older adults.",
-        "Direct effect modest and variable; population data show elevated hospitalisation risk in older adults."),
+        0.92, (0.75, 1.05), 5, "pk",
+        "The direct effect is modest, but volume depletion drives toxicity. Level within a week, reinforce "
+        "fluid advice and watch older adults closely through the first month.",
+        "Less potent than HCTZ at raising levels (Crabtree 1991); the hazard is secondary volume depletion. "
+        "Toxicity admission RR 5.5 (1.9-16.1) within one month of starting in people aged 66+ (Juurlink 2004)."),
     Interaction(
         "sglt2", "SGLT2 inhibitor",
         ("empagliflozin", "dapagliflozin", "canagliflozin", "ertugliflozin"),
-        1.20, (1.00, 1.50), 7, "pk",
-        "May LOWER lithium levels (natriuresis): check a level 1-2 weeks after starting; watch for relapse.",
-        "Case reports and small studies of falling levels; direction consistent, magnitude uncertain."),
+        1.15, (1.00, 1.40), 7, "pk",
+        "May LOWER lithium levels: check a level 1-2 weeks after starting or changing the dose, and watch "
+        "for relapse.",
+        "US lithium label (2026): may decrease serum lithium concentrations; NZ Medsafe 2023 and Malaysia NPRA "
+        "2024 alerts. Magnitude uncertain."),
     Interaction(
-        "xanthine", "Theophylline / aminophylline / high caffeine",
+        "xanthine", "Theophylline / aminophylline / caffeine",
         ("theophylline", "aminophylline", "caffeine"),
         1.25, (1.05, 1.50), 3, "pk",
-        "Lowers levels; stopping them raises levels. Check a level after starting or stopping.",
-        "Increased renal lithium clearance with methylxanthines."),
+        "Lowers levels; stopping them raises levels (caffeine withdrawal about +24%). Check a level after "
+        "starting or stopping.",
+        "Theophylline increased lithium clearance about 30% (Perry 1984, secondary); the US label lists "
+        "xanthines as lowering levels."),
     Interaction(
-        "acetazolamide", "Carbonic anhydrase inhibitor / osmotic diuretic",
-        ("acetazolamide", "mannitol", "urea"),
+        "acetazolamide", "Carbonic anhydrase inhibitor / osmotic diuretic / alkalinising agent",
+        ("acetazolamide", "mannitol", "urea", "sodium bicarbonate"),
         1.25, (1.00, 1.60), 2, "pk",
-        "Lowers levels; used therapeutically in toxicity only under specialist care.",
-        "Reduced proximal reabsorption increases lithium clearance."),
+        "Lowers levels by increasing urinary lithium excretion; more frequent monitoring.",
+        "US lithium label, Table 4 (no effect size)."),
     Interaction(
-        "metronidazole", "Metronidazole",
+        "metronidazole", "Metronidazole / nitroimidazoles",
         ("metronidazole", "tinidazole"),
         0.85, (0.60, 1.00), 5, "pk",
-        "Case reports of toxicity: consider a level during longer courses.",
-        "Case reports only."),
+        "Reduced renal clearance reported: consider a level during longer courses.",
+        "US lithium label: may increase levels via reduced renal clearance (no effect size)."),
     Interaction(
-        "carbamazepine", "Carbamazepine (neurotoxicity)",
-        ("carbamazepine",),
+        "carbamazepine", "Carbamazepine / phenytoin / methyldopa",
+        ("carbamazepine", "phenytoin", "methyldopa"),
         1.0, (1.0, 1.0), 0, "pd",
-        "Neurotoxicity reported at therapeutic lithium levels; monitor for neurological symptoms.",
-        "Pharmacodynamic; case series."),
+        "Increased risk of adverse reactions (including neurotoxicity) at therapeutic lithium levels; monitor "
+        "for neurological symptoms.",
+        "US lithium label (pharmacodynamic)."),
     Interaction(
-        "ccb_nondhp", "Verapamil / diltiazem (neurotoxicity)",
-        ("verapamil", "diltiazem"),
+        "ccb", "Calcium-channel blockers (neurotoxicity)",
+        ("verapamil", "diltiazem", "amlodipine", "nifedipine", "felodipine", "lercanidipine"),
         1.0, (1.0, 1.0), 0, "pd",
-        "Neurotoxicity and bradycardia reported; dihydropyridines (e.g. amlodipine) are preferred.",
-        "Pharmacodynamic; case reports."),
+        "Neurological adverse reactions reported (ataxia, tremor, nausea, tinnitus), mainly with verapamil and "
+        "diltiazem; not a level-raising interaction.",
+        "US lithium label; case reports (verapamil, diltiazem)."),
     Interaction(
         "serotonergic", "Serotonergic drugs (serotonin toxicity)",
         ("sertraline", "fluoxetine", "paroxetine", "citalopram", "escitalopram", "venlafaxine",
          "duloxetine", "tramadol", "sumatriptan", "linezolid", "methylene blue"),
         1.0, (1.0, 1.0), 0, "pd",
-        "Commonly combined safely; educate about serotonin toxicity symptoms, especially with dose escalation.",
-        "Pharmacodynamic; case reports."),
+        "Commonly combined safely; educate about serotonin toxicity, especially at lithium initiation. "
+        "Fluoxetine has been reported to raise or lower levels, so check a level after starting it.",
+        "US lithium label."),
     Interaction(
-        "antipsychotic_high", "High-dose antipsychotics (neurotoxicity)",
-        ("haloperidol",),
+        "antipsychotic", "Antipsychotics (neurotoxicity)",
+        ("haloperidol", "olanzapine", "quetiapine", "risperidone", "aripiprazole", "chlorpromazine"),
         1.0, (1.0, 1.0), 0, "pd",
-        "Rare neurotoxicity/NMS-like reactions reported, mainly with high doses; monitor.",
-        "Pharmacodynamic; case reports."),
+        "Usually combined safely; rare neurotoxicity, encephalopathic syndrome or NMS reported, mainly with "
+        "high doses. Monitor neurological status.",
+        "US lithium label (pharmacodynamic)."),
+    Interaction(
+        "iodide", "Iodide preparations",
+        ("potassium iodide",),
+        1.0, (1.0, 1.0), 0, "pd",
+        "Extended combined use may cause hypothyroidism; check TSH.",
+        "US lithium label."),
 ]}
 
 _INDEX = {name: key for key, it in CATALOG.items() for name in it.examples}

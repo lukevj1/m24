@@ -61,13 +61,8 @@ def li12_per_unit(post: Posterior, admins: Sequence[Administration], t: float, n
     total = sum(a for _, a, _ in cycle)
     unit_cycle = [(c, a / total, f) for c, a, f in cycle]
     clock = li12_clock(admins)
-    draws = post.draw(n, t, rng, sir=sir)
-    mult = np.broadcast_to(np.asarray(cl_mult, dtype=float), (n,))
-    out = np.empty(n)
-    for i, ((eta, drift), m) in enumerate(zip(draws, mult)):
-        p = post.params_at(eta, drift, t, cl_mult=m)
-        out[i] = steady_state(unit_cycle, p, clock)[0]
-    return out
+    params = post.param_draws(n, t, rng, cl_mult=cl_mult, sir=sir)
+    return np.array([steady_state(unit_cycle, p, clock)[0] for p in params])
 
 
 def standardized_li12(post: Posterior, admins: Sequence[Administration], t: float | None = None,
@@ -80,8 +75,7 @@ def standardized_li12(post: Posterior, admins: Sequence[Administration], t: floa
 
 
 def half_life_h(post: Posterior, t: float, n: int = 500, rng: np.random.Generator | None = None) -> Summary:
-    draws = post.draw(n, t, rng)
-    return summarise(np.array([post.params_at(e, d, t).terminal_half_life() for e, d in draws]), "h", 0)
+    return summarise(np.array([p.terminal_half_life() for p in post.param_draws(n, t, rng)]), "h", 0)
 
 
 def profile(post: Posterior, times: np.ndarray, n: int = 300, rng: np.random.Generator | None = None,
@@ -89,8 +83,7 @@ def profile(post: Posterior, times: np.ndarray, n: int = 300, rng: np.random.Gen
     """Median and 90% band of the concentration-time curve over ``times``
     (history plus any ``extra_doses`` planned for the future)."""
     rng = rng or np.random.default_rng(1)
-    U = post.sample(n, rng)
     doses = list(post.case.doses) + list(extra_doses or [])
-    curves = np.array([post.predict(times, u, doses=doses) for u in U])
+    curves = post.predict_draws(times, n, rng, doses=doses)
     lo, med, hi = np.percentile(curves, [5, 50, 95], axis=0)
     return med, lo, hi

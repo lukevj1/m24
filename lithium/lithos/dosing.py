@@ -22,6 +22,23 @@ from .forecast import Summary, half_life_h, summarise
 from .pk import steady_state
 from .units import Product, mg_to_mmol
 
+def default_target(age: float, *, postpartum_first_month: bool = False) -> tuple[float, float]:
+    """Starting-point targets for the standardised 12-hour level (mmol/L).
+
+    Adults: 0.60-0.80 (ISBD/IGSLi 2019; NICE CG185 for people starting
+    lithium); individualise to 0.40-0.60 for good response with poor
+    tolerability, or 0.80-1.00 for poor response with good tolerability.
+    Age 65+: 0.40-0.60 (ISBD/IGSLi majority view; NICE NG222), with maxima of
+    0.70-0.80 at 65-79 and 0.70 over 80. First postpartum month: 0.80-1.00
+    for relapse prevention (Poels 2018).
+    """
+    if postpartum_first_month:
+        return (0.8, 1.0)
+    if age >= 65:
+        return (0.4, 0.6)
+    return (0.6, 0.8)
+
+
 TEMPLATES = {
     "nocte": [21.0],          # once daily at night: the usual choice and kinder to kidneys
     "bd": [8.0, 20.0],
@@ -64,9 +81,12 @@ class Recommendation:
     half_life: Summary
     rationale: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    repeat_first: bool = False   # evidence too weak to justify a change: repeat a well-timed level first
 
     @property
     def change(self) -> str:
+        if self.repeat_first:
+            return "repeat level before changing"
         if self.current is None:
             return "start"
         d0, d1 = self.current.daily_mg, self.chosen.daily_mg
@@ -79,13 +99,8 @@ def unit_contributions(post: Posterior, clocks: Sequence[float], formulation: st
     """G[i, a]: steady-state Li12 (mmol/L) per 1 mmol/day given at ``clocks[a]``
     for posterior draw i, with Li12 taken 12 h after the last clock time."""
     li_clock = (max(clocks) + 12.0) % 24.0
-    draws = post.draw(n, t, rng)
-    mult = np.broadcast_to(np.asarray(cl_mult, dtype=float), (n,))
-    G = np.empty((n, len(clocks)))
-    for i, ((eta, drift), m) in enumerate(zip(draws, mult)):
-        p = post.params_at(eta, drift, t, cl_mult=m)
-        for j, c in enumerate(clocks):
-            G[i, j] = steady_state([(c, 1.0, formulation)], p, li_clock)[0]
+    params = post.param_draws(n, t, rng, cl_mult=cl_mult)
+    G = np.array([[steady_state([(c, 1.0, formulation)], p, li_clock)[0] for c in clocks] for p in params])
     return G, li_clock
 
 
@@ -186,6 +201,21 @@ def recommend(
                 current_opt.p_target >= chosen.p_target - 0.05 and lo <= current_opt.li12.median <= hi:
             chosen = current_opt
 
+    # Know when not to answer: if the current regimen is plausibly fine, nothing
+    # is dangerous, and the evidence is simply too uncertain, a better-timed
+    # level beats a dose change driven by uncertainty alone.
+    repeat_first = False
+    if current_opt is not None and chosen is not current_opt:
+        c = current_opt.li12
+        vague = (c.hi - c.lo) > 0.35
+        plausible = lo - 0.1 <= c.median <= hi + 0.1
+        safe_now = float(np.mean(c.samples > 1.2)) < 0.10
+        if vague and plausible and safe_now:
+            repeat_first = True
+            chosen = current_opt
+            warnings.append(f"evidence too uncertain to justify a change (90% CrI {c.lo:.2f}-{c.hi:.2f}); "
+                            "repeat a level at least 10 h after the evening dose, before any morning dose")
+
     hl = half_life_h(post, t, n=400, rng=rng)
     t_half_days = hl.median / 24.0
     recheck_conv = max(5, ceil(5 * t_half_days))
@@ -200,7 +230,10 @@ def recommend(
     rationale.append(f"Estimated half-life {hl.median:.0f} h (90% CrI {hl.lo:.0f}-{hl.hi:.0f}): "
                      f"~90% of a new steady state is reached after {3.3 * t_half_days:.1f} days.")
     ranked = sorted(options, key=rank_key)[:5]
-    return Recommendation(target, chosen, ranked, current_opt, product, recheck, recheck_conv, hl, rationale, warnings)
+    if repeat_first:
+        recheck = 1
+    return Recommendation(target, chosen, ranked, current_opt, product, recheck, recheck_conv, hl, rationale,
+                          warnings, repeat_first)
 
 
 @dataclass
@@ -227,6 +260,7 @@ def initiation_plan(prior: Posterior, product: Product, *, target: tuple[float, 
     The first level is scheduled a few days after reaching the maintenance dose;
     the Bayesian update does not need steady state, so it can come early.
     """
+    kwargs.setdefault("high", 1.0)      # a starting dose is chosen conservatively: P(level > 1.0) <= 5%
     rec = recommend(prior, product, target=target, template=template, t=0.0, **kwargs)
     step = product.strength_mg
     lead: list[Administration] = []

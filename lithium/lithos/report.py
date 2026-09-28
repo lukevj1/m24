@@ -40,7 +40,7 @@ def card(post: Posterior, admins: Sequence[Administration], li12: Summary, *, ti
     case = post.case
     L: list[str] = []
     rule = "=" * 78
-    L += [rule, f"{title}", BANNER, f"Model: {post.model.name} [{post.model.status}]", rule]
+    L += [rule, f"{title}", BANNER, f"Model: {post.summary_model}", rule]
 
     regimen = " + ".join(f"{a.mg:g} mg {a.formulation} at {int(a.clock):02d}:{int(round(a.clock % 1 * 60)):02d}"
                          for a in admins)
@@ -83,7 +83,10 @@ def card(post: Posterior, admins: Sequence[Administration], li12: Summary, *, ti
         if alts:
             L.append("  Alternatives: " + "; ".join(f"{o.daily_mg:g} mg/day -> {o.li12.median:.2f} "
                                                    f"(P in range {o.p_target:.0%})" for o in alts))
-        if rec.change != "no change":
+        if rec.repeat_first:
+            L.append("  Next level: tomorrow morning, at least 10 h after the evening dose and before any morning "
+                     "dose (record both times). No dose change until then.")
+        elif rec.change != "no change":
             L.append(f"  Next level: in {rec.recheck_days} days (any time of day, at least 6 h after a dose; "
                      f"record the time of the last dose). Conventional practice would wait "
                      f"{rec.recheck_days_conventional} days for steady state.")

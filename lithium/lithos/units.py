@@ -37,34 +37,44 @@ class Product:
     name: str
     strength_mg: float
     salt: str = "carbonate"
-    release: str = "IR"          # "IR" (immediate) or "SR" (sustained/prolonged/controlled)
-    scored: bool = False         # may be halved
+    release: str = "IR"          # "IR" (immediate), "SR" (sustained/prolonged/modified), "LIQ" (solution)
+    scored: bool = False         # may be halved (only set where confirmed)
     per_ml: float | None = None  # liquids: strength is per this many mL
+    mmol_label: float | None = None  # mmol Li+ stated on the pack (authoritative for citrate products)
     market: str = ""
+    verified: bool = True        # False where availability came from non-regulatory sources
 
     @property
     def mmol(self) -> float:
-        return mg_to_mmol(self.strength_mg, self.salt)
+        return self.mmol_label if self.mmol_label is not None else mg_to_mmol(self.strength_mg, self.salt)
 
 
-# Illustrative catalogue. Brand availability changes; confirm locally before use.
+# Illustrative catalogue (docs/EVIDENCE.md). Brands change; confirm locally
+# (TGA ARTG, dm+d, FDA) before relying on it. Never switch brands without a
+# plan: MR products are not interchangeable mg-for-mg.
 PRODUCTS: dict[str, Product] = {
     p.name: p
     for p in [
-        # Australia
-        Product("Lithicarb 250 mg", 250, release="IR", scored=True, market="AU"),
-        Product("Lithicarb 450 mg", 450, release="IR", scored=True, market="AU"),
-        Product("Quilonum SR 450 mg", 450, release="SR", scored=True, market="AU"),
-        # United Kingdom
-        Product("Priadel 200 mg", 200, release="SR", scored=True, market="UK"),
-        Product("Priadel 400 mg", 400, release="SR", scored=True, market="UK"),
-        Product("Camcolit 400 mg", 400, release="SR", scored=True, market="UK"),
-        Product("Priadel liquid 520 mg/5 mL", 520, salt="citrate", release="IR", per_ml=5, market="UK"),
-        # United States
-        Product("Lithium carbonate 150 mg cap", 150, release="IR", market="US"),
-        Product("Lithium carbonate 300 mg cap", 300, release="IR", market="US"),
-        Product("Lithium carbonate 600 mg cap", 600, release="IR", market="US"),
+        # Australia (from a dispensing dataset; confirm against the ARTG)
+        Product("Lithicarb 250 mg", 250, release="IR", market="AU", verified=False),
+        Product("Quilonum SR 450 mg", 450, release="SR", market="AU", verified=False),
+        # United Kingdom (dm+d-derived code lists)
+        Product("Camcolit 250 mg", 250, release="IR", market="UK"),
+        Product("Camcolit 400 mg MR", 400, release="SR", market="UK"),
+        Product("Priadel 200 mg MR", 200, release="SR", market="UK"),
+        Product("Priadel 400 mg MR", 400, release="SR", market="UK"),
+        Product("Liskonum 450 mg MR", 450, release="SR", market="UK"),
+        Product("Priadel liquid 520 mg/5 mL", 520, salt="citrate", release="LIQ", per_ml=5, market="UK"),
+        Product("Li-Liquid 509 mg/5 mL", 509, salt="citrate", release="LIQ", per_ml=5, mmol_label=5.4, market="UK"),
+        Product("Li-Liquid 1.018 g/5 mL", 1018, salt="citrate", release="LIQ", per_ml=5, mmol_label=10.8,
+                market="UK"),
+        # United States (FDA labels; 5 mL oral solution = 8 mEq = 300 mg carbonate)
+        Product("Lithium carbonate 150 mg", 150, release="IR", market="US"),
+        Product("Lithium carbonate 300 mg", 300, release="IR", market="US"),
+        Product("Lithium carbonate 600 mg", 600, release="IR", market="US"),
         Product("Lithium carbonate ER 300 mg", 300, release="SR", market="US"),
-        Product("Lithium carbonate ER 450 mg", 450, release="SR", scored=True, market="US"),
+        Product("Lithium carbonate ER 450 mg", 450, release="SR", market="US"),
+        Product("Lithium citrate oral solution 8 mEq/5 mL", 300, release="LIQ", per_ml=5, mmol_label=8.0,
+                market="US"),
     ]
 }

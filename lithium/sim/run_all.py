@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from lithos.models import get_model
+from lithos.models import get_engine, get_model
 
 from . import trials
 from .population import make_population
@@ -33,7 +33,7 @@ TARGET_WASH = "#e6f0fb"
 
 def _one(args):
     idx, n_pts, seed, truth_name, engine_name, which = args
-    truth, engine = get_model(truth_name), get_model(engine_name)
+    truth, engine = get_model(truth_name), get_engine(engine_name)
     vp = make_population(n_pts, truth, seed=seed)[idx]
     rng = np.random.default_rng(seed * 100003 + idx)
     out = {"pid": idx, "age": vp.cov(0).age, "egfr": vp.cov(0).egfr, "miss": vp.miss_prob}
@@ -286,11 +286,12 @@ def main():
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--truth", default="truth-perturbed")
-    ap.add_argument("--engine", default=None)
+    ap.add_argument("--engine", default="ensemble", help='"ensemble" or a single model name')
     ap.add_argument("--which", default="titration,anytime,thiazide,early")
     ap.add_argument("--procs", type=int, default=mp.cpu_count())
+    ap.add_argument("--merge", action="store_true", help="update only the selected experiments in sim/results.json")
     a = ap.parse_args()
-    engine = a.engine or get_model().name
+    engine = a.engine
     which = set(a.which.split(","))
     t0 = time.time()
     jobs = [(i, a.n, a.seed, a.truth, engine, which) for i in range(a.n)]
@@ -302,6 +303,13 @@ def main():
                 print(f"  {k + 1}/{a.n} patients ({(time.time() - t0) / 60:.1f} min)", flush=True)
     rows.sort(key=lambda r: r["pid"])
     meta = {"n": a.n, "seed": a.seed, "truth": a.truth, "engine": engine, "runtime_min": (time.time() - t0) / 60}
+    if a.merge:
+        old = json.loads((ROOT / "sim" / "results.json").read_text())
+        by_pid = {r["pid"]: r for r in old["rows"]}
+        for r in rows:
+            by_pid.setdefault(r["pid"], {}).update({k: v for k, v in r.items()})
+        rows = [by_pid[k] for k in sorted(by_pid)]
+        meta["runtime_min"] += old["meta"].get("runtime_min", 0.0)
     (ROOT / "sim" / "results.json").write_text(json.dumps({"meta": meta, "rows": rows}, default=float))
     md = summarise(rows, meta)
     (ROOT / "docs" / "SIMULATION_RESULTS.md").write_text(md + "\n")

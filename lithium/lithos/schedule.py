@@ -74,6 +74,7 @@ class Context:
     last_bloods_h: float | None = None   # U&E/eGFR, TFT, calcium, weight
     pregnant_weeks: float | None = None  # gestational age now, if pregnant
     postpartum_days: float | None = None
+    regular_nsaid: bool = False          # NICE: levels monthly until stable, then 3-monthly
 
     def high_risk_reasons(self, threshold: float) -> list[str]:
         reasons = []
@@ -102,11 +103,16 @@ def guideline_tasks(ctx: Context, now_h: float, guideline: str = "NICE") -> list
     if ctx.pregnant_weeks is not None:
         interval = 7 * DAY if ctx.pregnant_weeks >= 36 else 28 * DAY
         tasks.append(Task(max(now_h, last_level_h + interval), "lithium level",
-                          "pregnancy: every 4 weeks, weekly from 36 weeks (clearance rises then falls abruptly at delivery)",
-                          "soon"))
+                          "pregnancy: every 4 weeks, weekly from 36 weeks, and within 24 h of birth (NICE CG192); "
+                          "clearance rises through pregnancy and falls abruptly at delivery", "soon"))
     elif ctx.postpartum_days is not None and ctx.postpartum_days < 28:
-        tasks.append(Task(now_h + DAY if ctx.postpartum_days < 1 else now_h + 7 * DAY, "lithium level",
-                          "postpartum: within 24 h of delivery, then weekly for the first month", "soon"))
+        if ctx.postpartum_days < 1:
+            due, why = now_h + DAY, "postpartum: within 24 h of delivery"
+        elif ctx.postpartum_days < 14:
+            due, why = max(now_h, last_level_h + 3.5 * DAY), "postpartum: twice weekly for the first 2 weeks (Poels 2018)"
+        else:
+            due, why = max(now_h, last_level_h + 7 * DAY), "postpartum: weekly to the end of the first month"
+        tasks.append(Task(due, "lithium level", why, "soon"))
     elif not ctx.stable or now_h - ctx.last_change_h < 14 * DAY:
         due = max(ctx.last_change_h + r["level_after_change_days"] * DAY, now_h)
         tasks.append(Task(due, "lithium level", "titration: after each dose change until stable", "soon"))
@@ -119,6 +125,8 @@ def guideline_tasks(ctx: Context, now_h: float, guideline: str = "NICE") -> list
             months, why = r["level_high_risk_months"], "higher-risk group: " + ", ".join(risks)
         else:
             months, why = r["level_maintenance_months"], "stable maintenance"
+        if ctx.regular_nsaid:
+            months, why = 1, "regular NSAID: monthly until stable, then 3-monthly (NICE CG185)"
         tasks.append(Task(max(now_h, last_level_h + months * MONTH), "lithium level", why))
 
     bloods_h = ctx.last_bloods_h if ctx.last_bloods_h is not None else ctx.start_h

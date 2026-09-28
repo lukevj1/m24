@@ -65,4 +65,34 @@ The test must be adversarial: the engine must not be allowed to "know" the truth
 
 ## Results
 
-(Inserted after the full run.)
+Full tables: [`SIMULATION_RESULTS.md`](SIMULATION_RESULTS.md). Figures: `docs/figures/`. Headline numbers are summarised in
+[`DESIGN.md` §11](DESIGN.md#11-what-the-prototype-shows).
+
+### 2. A level drawn at a convenient time
+
+![Any-time sampling](figures/anytime.png)
+
+Across 500 stable patients sampled 2–22 h after a night-time dose:
+
+- **Error.** Median absolute error against a correctly timed 12-hour level fell from **0.098 mmol/L** (reading the level at face value) to **0.037** (engine).
+- **Classification.** The share of samples put in the wrong category (below / in / above 0.6–0.8) fell from **32% to 16%**.
+- **Calibration.** The engine's 90% intervals contained the truth **95%** of the time.
+- **Time-of-day effect.**
+  - Late samples (18–22 h): the gain was largest, error 0.135 → 0.039 and wrong category 43% → 14%.
+  - Samples at 10–14 h: the two methods were equal, as they should be.
+  - Samples within 6 h of a dose: face-value reading was badly wrong (error 0.32; wrong category 59%). The engine reduced this to 0.074, but still misclassified 36%, and its interval coverage fell to 87%. This is why the product asks for samples at least 6 h after a dose and returns "repeat level first" when a sample can't support a decision.
+
+**An honest negative finding.** Adding a second, older level (from 45 days earlier) made the estimate slightly *worse* (0.048 vs 0.037). The virtual patients' clearance drifts more between visits than the engine assumes, so the engine over-trusts old data. The sensitivity analysis below tests this explanation. The practical lesson: drift magnitudes must be estimated from real longitudinal data before history is trusted.
+
+### 3. A thiazide is started in a stable patient
+
+![Thiazide](figures/thiazide.png)
+
+| True 12-hour level afterwards | No lithium change | Engine-adjusted dose |
+|---|---|---|
+| > 1.0 mmol/L | 53% | 22% |
+| > 1.2 mmol/L | 29% | 6% |
+| 0.5–0.9 | 33% | 61% |
+| < 0.5 | 1% | 5% |
+
+The pre-emptive adjustment halved the share above 1.0 and cut the share above 1.2 almost five-fold. It is not a substitute for the check level, though. The truth's interaction effect was deliberately drawn stronger and more variable than the engine's catalogue (median clearance ×0.70 vs ×0.76), and the engine's 90% forecast interval for the no-change level contained the truth in only **68%** of patients. The design therefore always pairs a forecast with a level 5–7 days later, and interaction effect sizes should be learned from outcomes as data accrue.

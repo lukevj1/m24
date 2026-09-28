@@ -61,45 +61,60 @@ class RenalTrend:
     flags: list[str]
 
 
-def egfr_trend(times_years: np.ndarray, egfr: np.ndarray, age_now: float | None = None) -> RenalTrend:
+def egfr_trend(times_years: np.ndarray, egfr: np.ndarray, age_now: float | None = None,
+               acr_mg_mmol: float | None = None) -> RenalTrend:
     """Robust eGFR slope with clinically framed flags.
 
     Theil-Sen (median of pairwise slopes) resists the single spurious
-    creatinine that plagues routine data. Flags follow widely used definitions:
-    KDIGO rapid progression (> 5 mL/min/1.73 m^2 per year sustained) and NICE
-    accelerated progression (>= 25 % fall with a category change, or a fall of
-    >= 15 mL/min/1.73 m^2 within a year). Age-related decline after 40 is
-    roughly 1 mL/min/1.73 m^2 per year, so anything steeper is worth a look.
+    creatinine that plagues routine data. Rules follow NICE NG203 and KDIGO:
+    a trajectory needs at least 3 eGFRs over at least 90 days; a new low value
+    should be repeated within 2 weeks to exclude acute kidney injury;
+    accelerated progression is a sustained fall of >= 25% with a category
+    change within 12 months, or >= 15 mL/min/1.73 m^2 per year; KDIGO rapid
+    progression is a sustained decline of > 5 per year. Age-related decline is
+    roughly 1 per year, and in long-term lithium users about 30% faster
+    (Tondo 2017).
     """
     t = np.asarray(times_years, dtype=float)
     y = np.asarray(egfr, dtype=float)
     order = np.argsort(t)
     t, y = t[order], y[order]
     flags: list[str] = []
-    if t.size < 2 or np.ptp(t) < 0.25:
-        latest = float(y[-1])
+    latest = float(y[-1]) if y.size else float("nan")
+    if y.size >= 2 and y[-1] < 0.85 * y[-2] and (t[-1] - t[-2]) < 0.5:
+        flags.append("new fall of >15% since the previous test: repeat within 2 weeks to exclude acute kidney "
+                     "injury before drawing conclusions (NICE NG203)")
+    if t.size < 3 or np.ptp(t) < 90 / 365.25:
+        stage = ckd_stage(latest)
         return RenalTrend(int(t.size), float(np.ptp(t)) if t.size else 0.0, np.nan, np.nan, np.nan,
-                          latest, ckd_stage(latest), ["insufficient data for a trend"])
+                          latest, stage, flags + ["trend needs >= 3 eGFRs over >= 90 days (NICE NG203)"])
     i, j = np.triu_indices(t.size, k=1)
     dt = t[j] - t[i]
     keep = dt > 1.0 / 52.0
     slopes = (y[j] - y[i])[keep] / dt[keep]
     slope = float(np.median(slopes))
     lo, hi = (float(v) for v in np.percentile(slopes, [5, 95]))
-    latest = float(np.median(y[-2:])) if t.size >= 3 else float(y[-1])
+    latest = float(np.median(y[-2:]))
     stage = ckd_stage(latest)
 
     if slope < -5.0 and hi < -1.0:
-        flags.append("rapid decline (KDIGO: > 5 mL/min/1.73m2/yr)")
+        flags.append("rapid decline: > 5 mL/min/1.73m2/yr (KDIGO)")
     elif slope < -2.0:
-        flags.append("decline faster than expected for age (~1 mL/min/1.73m2/yr)")
+        flags.append("decline faster than expected for age (~1 mL/min/1.73m2/yr): monitor dose and levels more "
+                     "often and assess the rate of deterioration (NICE CG185)")
     one_year = t >= t[-1] - 1.0
     if one_year.sum() >= 2:
-        first, last = y[one_year][0], latest
+        first, last = float(y[one_year][0]), latest
         if last <= first - 15.0 or (last <= 0.75 * first and ckd_stage(first) != stage):
-            flags.append("accelerated progression within 12 months (NICE definition)")
+            flags.append("accelerated progression within 12 months (NICE NG203): nephrology referral criterion")
+    if acr_mg_mmol is not None and acr_mg_mmol >= 70:
+        flags.append("urine ACR >= 70 mg/mmol: nephrology referral criterion (NICE NG203)")
     if latest < 60:
-        flags.append(f"eGFR {latest:.0f}: CKD {stage} - review target level, dosing frequency and monitoring interval")
-    if latest < 45:
-        flags.append("eGFR < 45: discuss with nephrology; weigh continuing vs alternatives with the patient")
+        flags.append(f"eGFR {latest:.0f} ({stage}): consider the lowest effective level, once-daily dosing and "
+                     "3-monthly monitoring; renal risk rises with higher serum levels (Tondo 2017)")
+    if latest < 45 or any("accelerated" in f or "rapid" in f for f in flags):
+        flags.append("when weighing whether to continue: seek advice from a renal specialist and a clinician "
+                     "with expertise in bipolar disorder (NICE CG185); share the decision with the patient")
+    if latest < 30:
+        flags.append("eGFR < 30: lithium not recommended by US labelling at CrCl < 30 mL/min")
     return RenalTrend(int(t.size), float(np.ptp(t)), slope, lo, hi, latest, stage, flags)
