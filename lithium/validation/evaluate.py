@@ -14,10 +14,13 @@ Comparators get exactly the same information:
     proportional  the previous level scaled by the change in average daily dose
                   over the 72 h before each level (linear kinetics)
 
-Reported per method, overall and by stratum: relative bias and relative RMSE,
-mean absolute error, share within +/-20 % and within +/-0.1 mmol/L, and, for
-model forecasts, coverage of the 90 % prediction interval. 95 % intervals come
-from a patient-level bootstrap.
+Reported per method, overall and by stratum: median prediction error (MDPE,
+bias) and median absolute prediction error (MDAPE, imprecision), the metrics
+used in published external evaluations of lithium models; mean absolute error;
+share within +/-20 % and within +/-0.1 mmol/L; and, for model forecasts,
+coverage of the 90 % prediction interval. Medians, because a few very low
+levels (a dose missed the night before the test) make means of relative errors
+meaningless. 95 % intervals come from a patient-level bootstrap.
 
 Only aggregate results are printed or written by default. Per-level output
 (--rows) must stay where the data are: read docs/VALIDATION.md first.
@@ -148,7 +151,7 @@ def metrics(obs, pred, lo=None, hi=None) -> dict:
         return {"n": 0}
     err = pred - obs
     rel = err / obs
-    m = {"n": int(obs.size), "rbias": float(100 * rel.mean()), "rrmse": float(100 * np.sqrt(np.mean(rel ** 2))),
+    m = {"n": int(obs.size), "mdpe": float(100 * np.median(rel)), "mdape": float(100 * np.median(np.abs(rel))),
          "mae": float(np.abs(err).mean()), "within20": float(100 * np.mean(np.abs(rel) <= 0.2)),
          "within01": float(100 * np.mean(np.abs(err) <= 0.1 + 1e-9))}
     if lo is not None:
@@ -296,11 +299,11 @@ def report_md(res: dict, title: str = "Individual-level validation") -> str:
     fu = res["follow_up"]
     n = fu.get("engine", {}).get("n", 0)
     L += [f"## Forecasting the next level (levels with at least one earlier level, n = {n})", "",
-          "| Method | Relative bias | Relative RMSE | Mean abs. error, mmol/L (95% CI) | Within +/-20% (95% CI) | "
+          "| Method | Bias (MDPE) | Imprecision (MDAPE) | Mean abs. error, mmol/L (95% CI) | Within +/-20% (95% CI) | "
           "Within +/-0.1 mmol/L | 90% PI coverage |", "|---|---|---|---|---|---|---|"]
     for m, label in METHODS:
         mm = fu.get(m, {})
-        L.append(f"| {label} | {_fmt(mm, 'rbias', 1, True)} | {_fmt(mm, 'rrmse', 1, True)} | {_fmt(mm, 'mae', 3)} | "
+        L.append(f"| {label} | {_fmt(mm, 'mdpe', 1, True)} | {_fmt(mm, 'mdape', 1, True)} | {_fmt(mm, 'mae', 3)} | "
                  f"{_fmt(mm, 'within20', 0, True)} | {_fmt(mm, 'within01', 0, True)} | {_fmt(mm, 'coverage90', 0, True)} |")
     if "engine_minus_carry" in res:
         d = res["engine_minus_carry"]
@@ -309,7 +312,7 @@ def report_md(res: dict, title: str = "Individual-level validation") -> str:
                   f"points (95% CI {d['within20_ci'][0]:+.0f} to {d['within20_ci'][1]:+.0f})."]
     fl = res["first_level"]["population"]
     L += ["", f"## First level of each patient (population prior only, n = {fl.get('n', 0)})", "",
-          f"Relative bias {_fmt(fl, 'rbias', 1, True)}, relative RMSE {_fmt(fl, 'rrmse', 1, True)}, within +/-20% "
+          f"MDPE {_fmt(fl, 'mdpe', 1, True)}, MDAPE {_fmt(fl, 'mdape', 1, True)}, within +/-20% "
           f"{_fmt(fl, 'within20', 0, True)}, 90% PI coverage {_fmt(fl, 'coverage90', 0, True)}.", ""]
     hl = res["high_levels"]
     if hl["n_above_1"]:

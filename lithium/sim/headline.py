@@ -71,6 +71,19 @@ def anytime(rows):
     return per_bin, allm
 
 
+def subgroups(rows):
+    groups = {"Aged 65+": [r for r in rows if r["age"] >= 65], "eGFR below 60": [r for r in rows if r["egfr"] < 60]}
+    out = {}
+    for g, sub in groups.items():
+        out[g] = {"n": len(sub)}
+        for k, _ in ARMS:
+            xs = [r[k] for r in sub]
+            out[g][k] = {"in_range": 100 * float(np.mean([x["final_in_range"] for x in xs])),
+                         "over1": 100 * float(np.mean([x["days_on_dose_over_1"] > 0 for x in xs])),
+                         "tests": float(np.mean([x["tests"] for x in xs]))}
+    return out
+
+
 def thiazide(rows):
     th = [r["thiazide"] for r in rows if "thiazide" in r]
     na = np.array([t["no_action"] for t in th])
@@ -104,6 +117,7 @@ def early(rows):
 
 def web(meta, rows) -> dict:
     T = titration(rows)
+    SG = subgroups(rows)
     bins, allm = anytime(rows)
     th = thiazide(rows)
     ea = early(rows)
@@ -120,7 +134,8 @@ def web(meta, rows) -> dict:
     return {
         "intro": (f"{meta['n']} virtual adults (a fifth aged over 65) were generated from a deliberately different "
                   "model than the engine uses. They miss doses, have blood drawn at realistic times and have noisy "
-                  "assays. Usual care reads each level at face value as a 12-hour level."),
+                  "assays. Usual care reads each level at face value as a 12-hour level. Both arms stop by the same "
+                  "rule, and the results come from a population held out while the engine was developed."),
         "cards": [
             {"kind": "bars", "title": "Starting lithium: blood tests until a stable dose is confirmed",
              "sub": "Mean tests over an 8-week titration to 0.6–0.8 mmol/L; hover for median and IQR.",
@@ -133,26 +148,39 @@ def web(meta, rows) -> dict:
              "rows": pct_rows, "labelW": 170,
              "table": {"headers": ["Arm", "Truly 0.6–0.8", "Truly 0.5–0.9", "Ever > 1.0"],
                        "rows": [[lab[k], f"{T[k]['in_range_pct']:.0f}%", f"{T[k]['in_wide_pct']:.0f}%", f"{T[k]['over1_pct']:.0f}%"] for k, _ in ARMS]}},
+            {"kind": "bars", "pctFmt": True, "max": 100, "title": "Where lithium is most feared: older adults and weaker kidneys",
+             "sub": "Share whose final dose was truly in 0.6–0.8, and share ever on a dose truly above 1.0. Tests were similar.",
+             "rows": [{"title": f"{g} (n = {SG[g]['n']}): final dose in range", "bars": [
+                          {"label": lab["uc_step"], "v": SG[g]["uc_step"]["in_range"]},
+                          {"label": lab["mipd"], "v": SG[g]["mipd"]["in_range"], "emph": True}]} for g in SG] +
+                     [{"title": f"{g}: ever above 1.0", "bars": [
+                          {"label": lab["uc_step"], "v": SG[g]["uc_step"]["over1"]},
+                          {"label": lab["mipd"], "v": SG[g]["mipd"]["over1"], "emph": True}]} for g in SG],
+             "labelW": 170,
+             "table": {"headers": ["Group", "Arm", "Tests (mean)", "Final dose truly 0.6–0.8", "Ever > 1.0"],
+                       "rows": [[g, lab[k], f"{SG[g][k]['tests']:.1f}", f"{SG[g][k]['in_range']:.0f}%", f"{SG[g][k]['over1']:.0f}%"]
+                                for g in SG for k, _ in ARMS]}},
             {"kind": "line", "title": "A level drawn at a convenient time",
-             "sub": "Median error against what a correctly timed 12-hour level would have shown, by hours after the evening dose.",
+             "sub": "Median error against what a correctly timed 12-hour level would have shown, by hours after the evening dose. At 10–14 h the measured value is already right, and the report keeps it first.",
              "series": [{"short": "As measured", "emph": False, "pts": [[b["mid"], b["naive"]] for b in bins]},
                         {"short": "Engine", "emph": True, "pts": [[b["mid"], b["engine"]] for b in bins]}],
              "xticks": [b["mid"] for b in bins], "xunit": "h", "xlabel": "hours after the evening dose", "band": [11, 13],
              "table": {"headers": ["Hours", "n", "As measured", "Engine", "Wrong category (as measured)", "Wrong category (engine)", "90% interval coverage"],
                        "rows": [[f"{b['mid']:.0f}", str(b["n"]), f"{b['naive']:.3f}", f"{b['engine']:.3f}", f"{b['naive_wrong']:.0f}%", f"{b['engine_wrong']:.0f}%", f"{b['coverage']:.0f}%"] for b in bins]}},
             {"kind": "bars", "pctFmt": True, "max": 100, "title": "A thiazide is started in a stable patient",
-             "sub": "True 12-hour level afterwards: no lithium change vs the engine's pre-emptive adjustment.",
+             "sub": "True 12-hour level afterwards: no lithium change vs the engine's pre-emptive adjustment. A check level 5–7 days later is still needed.",
              "rows": [
                  {"title": "Above 1.0 mmol/L", "bars": [{"label": "No change", "v": th["over1"][0]}, {"label": "Engine-adjusted", "v": th["over1"][1], "emph": True}]},
                  {"title": "Above 1.2 mmol/L", "bars": [{"label": "No change", "v": th["over12"][0]}, {"label": "Engine-adjusted", "v": th["over12"][1], "emph": True}]},
                  {"title": "Within 0.5–0.9 mmol/L", "bars": [{"label": "No change", "v": th["wide"][0]}, {"label": "Engine-adjusted", "v": th["wide"][1], "emph": True}]},
+                 {"title": "Below 0.5 mmol/L (the price)", "bars": [{"label": "No change", "v": th["under05"][0]}, {"label": "Engine-adjusted", "v": th["under05"][1], "emph": True}]},
              ], "labelW": 130,
              "table": {"headers": ["Outcome", "No change", "Engine-adjusted"],
                        "rows": [["> 1.0", f"{th['over1'][0]:.0f}%", f"{th['over1'][1]:.0f}%"], ["> 1.2", f"{th['over12'][0]:.0f}%", f"{th['over12'][1]:.0f}%"],
                                 ["0.5–0.9", f"{th['wide'][0]:.0f}%", f"{th['wide'][1]:.0f}%"], ["0.6–0.8", f"{th['target'][0]:.0f}%", f"{th['target'][1]:.0f}%"],
                                 ["< 0.5", f"{th['under05'][0]:.0f}%", f"{th['under05'][1]:.0f}%"]]}},
             {"kind": "line", "title": "How soon after a dose change is a level useful?",
-             "sub": "Median error in the new steady-state 12-hour level, by day of sampling, with one earlier level on record.",
+             "sub": "Median error in the new steady-state 12-hour level, by day of sampling, with one earlier level on record. From day 4 the measured value is as good or better.",
              "series": [{"short": "As measured", "emph": False, "pts": [[e["day"], e["naive"]] for e in ea]},
                         {"short": "Engine", "emph": True, "pts": [[e["day"], e["with_history"]] for e in ea]}],
              "xticks": [e["day"] for e in ea], "xunit": "day", "xlabel": "day of sampling after the change",

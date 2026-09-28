@@ -237,7 +237,8 @@ def figures(rows: list[dict]):
                 ys.append(np.median([abs(a[key] - a["truth12"]) for a in sub]) if sub else np.nan)
             ax.plot(mids, ys, color=color, linewidth=2, linestyle=ls, marker=mk, markersize=6, label=label,
                     markeredgecolor=SURFACE, markeredgewidth=1.2, zorder=3)
-            ax.annotate(label, (mids[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", va="center",
+            dy = {"naive": 0, "engine_med": 7, "hist_med": -7}[key]   # the two engine lines end close together
+            ax.annotate(label, (mids[-1], ys[-1]), xytext=(6, dy), textcoords="offset points", va="center",
                         fontsize=8.5, color=INK2)
         ax.axvspan(11, 13, color=TARGET_WASH, zorder=0)
         ax.text(12, ax.get_ylim()[1] * 0.97, "12 h", ha="center", va="top", fontsize=8.5, color=INK2)
@@ -257,10 +258,11 @@ def figures(rows: list[dict]):
         _style(ax)
         bins = np.arange(0.2, 2.01, 0.05)
         ax.axvspan(0.6, 0.8, color=TARGET_WASH, zorder=0)
-        ax.hist([t["no_action"] for t in th], bins=bins, color=GREY_DARK, alpha=0.9, label="No lithium change",
-                histtype="stepfilled", zorder=2)
-        ax.hist([t["engine_adjusted"] for t in th], bins=bins, color=BLUE, alpha=0.75, label="Engine-adjusted dose",
-                histtype="stepfilled", zorder=3)
+        # Filled grey vs a blue outline: overlapping translucent fills would blend into a third colour.
+        ax.hist([t["no_action"] for t in th], bins=bins, facecolor=GREY_LIGHT, edgecolor=GREY_DARK, linewidth=1.2,
+                label="No lithium change", histtype="stepfilled", zorder=2)
+        ax.hist([t["engine_adjusted"] for t in th], bins=bins, color=BLUE, linewidth=2.2,
+                label="Engine-adjusted dose", histtype="step", zorder=3)
         ax.axvline(1.0, color=MUTED, linewidth=1)
         ax.text(1.01, ax.get_ylim()[1] * 0.95, "1.0", fontsize=8.5, color=INK2, va="top")
         ax.set_xlabel("True 12-h level after starting the thiazide (mmol/L)")

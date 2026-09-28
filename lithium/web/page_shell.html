@@ -1,0 +1,413 @@
+<title>Lithos lithium care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+:root {
+  --ground: #f4f3f6;
+  --surface: #ffffff;
+  --surface-2: #f9f8fb;
+  --ink: #1c1a21;
+  --ink-2: #55505e;
+  --muted: #7f7988;
+  --line: #e2dfe8;
+  --line-2: #d0ccd8;
+  --accent: #7a3e96;
+  --accent-ink: #6b3386;
+  --accent-wash: #f0e7f5;
+  --series-engine: #7a3e96;
+  --series-status: #8a8591;
+  --good: #1e7a45;
+  --good-wash: #e3f2e8;
+  --warn: #9a6100;
+  --warn-wash: #fbefd9;
+  --crit: #b3261e;
+  --crit-wash: #fbe4e2;
+  --band-sub: #eceaf0;
+  --band-low: #e6eef8;
+  --band-target: #dcefe2;
+  --band-high: #f6ecd6;
+  --band-above: #f8dfc9;
+  --band-toxic: #f5d2cf;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #121016;
+    --surface: #1b1820;
+    --surface-2: #211d27;
+    --ink: #f2eff5;
+    --ink-2: #c3bdcb;
+    --muted: #938c9d;
+    --line: #2e2935;
+    --line-2: #3d3746;
+    --accent: #c592e0;
+    --accent-ink: #d4abea;
+    --accent-wash: #2b2235;
+    --series-engine: #a878c8;
+    --series-status: #6e6977;
+    --good: #5cc98a;
+    --good-wash: #16291e;
+    --warn: #e6ab45;
+    --warn-wash: #2e2414;
+    --crit: #f07a70;
+    --crit-wash: #331b1a;
+    --band-sub: #25212b;
+    --band-low: #1c2533;
+    --band-target: #182a1f;
+    --band-high: #2d2616;
+    --band-above: #33231a;
+    --band-toxic: #3a1d1c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #121016;
+  --surface: #1b1820;
+  --surface-2: #211d27;
+  --ink: #f2eff5;
+  --ink-2: #c3bdcb;
+  --muted: #938c9d;
+  --line: #2e2935;
+  --line-2: #3d3746;
+  --accent: #c592e0;
+  --accent-ink: #d4abea;
+  --accent-wash: #2b2235;
+  --series-engine: #a878c8;
+  --series-status: #6e6977;
+  --good: #5cc98a;
+  --good-wash: #16291e;
+  --warn: #e6ab45;
+  --warn-wash: #2e2414;
+  --crit: #f07a70;
+  --crit-wash: #331b1a;
+  --band-sub: #25212b;
+  --band-low: #1c2533;
+  --band-target: #182a1f;
+  --band-high: #2d2616;
+  --band-above: #33231a;
+  --band-toxic: #3a1d1c;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-inline: 16px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); line-height: 1.06; }
+h2 { font-size: clamp(1.55rem, 3.2vw, 2.1rem); line-height: 1.15; }
+h3 { font-size: 1.2rem; line-height: 1.25; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.12rem; color: var(--ink-2); max-width: 62ch; }
+.prose { max-width: 66ch; color: var(--ink-2); display: flex; flex-direction: column; gap: 12px; }
+.prose strong { color: var(--ink); }
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-data); }
+.num { font-variant-numeric: tabular-nums; }
+section { display: flex; flex-direction: column; gap: 20px; }
+.section-head { display: flex; flex-direction: column; gap: 8px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 36px; align-items: center; }
+.hero-text { display: flex; flex-direction: column; gap: 18px; }
+.element-tile {
+  width: 64px; height: 64px; border: 1.5px solid var(--ink); border-radius: 4px; display: grid; place-items: center;
+  font-family: var(--font-data); position: relative; flex-shrink: 0;
+}
+.element-tile .z { position: absolute; top: 3px; left: 6px; font-size: 0.66rem; }
+.element-tile .sym { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; margin-top: 6px; }
+.element-tile .m { position: absolute; bottom: 3px; font-size: 0.6rem; color: var(--ink-2); }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; }
+.brand-sub { color: var(--muted); font-size: 0.9rem; }
+
+/* the pathology slip */
+.slip {
+  margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  font-family: var(--font-data); font-size: 0.82rem; box-shadow: 0 1px 0 var(--line), 0 12px 32px -18px rgba(40, 20, 60, 0.25);
+  overflow: hidden;
+}
+.slip-head { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px dashed var(--line-2); color: var(--muted); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.slip-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.slip-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; }
+.slip-row .k { color: var(--ink-2); }
+.slip-row .v { font-variant-numeric: tabular-nums; text-align: right; }
+.slip-row.raw .v { font-size: 1.05rem; }
+.slip-std { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.slip-std .big { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; font-weight: 600; color: var(--accent-ink); }
+.slip-std .ci { color: var(--ink-2); }
+.slip-note { color: var(--muted); font-size: 0.72rem; line-height: 1.45; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; width: fit-content; }
+.pill.good { background: var(--good-wash); color: var(--good); }
+.pill.warn { background: var(--warn-wash); color: var(--warn); }
+.pill.crit { background: var(--crit-wash); color: var(--crit); }
+.pill.info { background: var(--accent-wash); color: var(--accent-ink); }
+
+/* instrument */
+.instrument { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset { font: inherit; font-size: 0.88rem; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); cursor: pointer; }
+.preset[aria-pressed="true"] { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+legend { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 6px; }
+.field { display: grid; grid-template-columns: 1fr 118px; gap: 10px; align-items: center; }
+.field label { font-size: 0.9rem; color: var(--ink-2); }
+.field input, .field select {
+  font: inherit; font-family: var(--font-data); font-size: 0.9rem; width: 100%; padding: 6px 8px; border-radius: 7px;
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink);
+}
+.field .derived { font-family: var(--font-data); font-size: 0.8rem; color: var(--muted); grid-column: 1 / -1; margin-top: -4px; }
+.range-wrap { display: flex; flex-direction: column; gap: 4px; }
+.range-wrap input[type="range"] { width: 100%; accent-color: var(--accent); }
+.range-label { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--ink-2); }
+.range-label b { font-family: var(--font-data); color: var(--ink); font-weight: 500; }
+.hint { font-size: 0.8rem; color: var(--muted); }
+
+.outputs { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.out-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.verdict { display: flex; flex-direction: column; gap: 8px; }
+.verdict .std { font-family: var(--font-display); font-size: 2.6rem; font-weight: 600; line-height: 1; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.verdict .std small { font-family: var(--font-body); font-size: 0.95rem; color: var(--ink-2); font-weight: 400; margin-left: 4px; }
+.compare { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.9rem; }
+.compare dt { color: var(--muted); }
+.compare dd { margin: 0; color: var(--ink); }
+.flags { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; color: var(--ink-2); }
+.flags li { padding-left: 14px; position: relative; }
+.flags li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.rec h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
+.rec .dose { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; }
+.rec-stats { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.88rem; color: var(--ink-2); }
+.rec-stats b { color: var(--ink); font-family: var(--font-data); font-weight: 500; }
+.model-line { font-size: 0.8rem; color: var(--muted); font-family: var(--font-data); }
+
+/* gauge + chart */
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; }
+.axis text, .tick text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 6px 9px; font-size: 0.8rem; font-family: var(--font-data); color: var(--ink); box-shadow: 0 6px 18px -8px rgba(0,0,0,.35);
+  white-space: nowrap; z-index: 2;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.8rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.key.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* capabilities */
+.caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px 32px; }
+.cap { display: flex; flex-direction: column; gap: 6px; padding-top: 14px; border-top: 1.5px solid var(--ink); }
+.cap h3 { font-size: 1.15rem; }
+.cap p { color: var(--ink-2); font-size: 0.95rem; }
+.cap .src { font-size: 0.78rem; color: var(--muted); font-family: var(--font-data); }
+
+/* sim */
+.sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.sim-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.sim-card h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
+.sim-card .sub { font-size: 0.85rem; color: var(--ink-2); }
+details { font-size: 0.85rem; color: var(--ink-2); }
+summary { cursor: pointer; color: var(--accent-ink); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; color: var(--ink); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-data); }
+.caveat { font-size: 0.85rem; color: var(--muted); max-width: 70ch; }
+
+/* analogues + plan */
+.analogues td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.phase { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.phase .when { font-family: var(--font-data); font-size: 0.75rem; color: var(--accent-ink); letter-spacing: 0.06em; text-transform: uppercase; }
+.phase p { font-size: 0.92rem; color: var(--ink-2); }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: var(--muted); max-width: 80ch; }
+
+@media (max-width: 860px) {
+  .hero, .instrument, .out-grid { grid-template-columns: minmax(0, 1fr); }
+  .field { grid-template-columns: 1fr 110px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .std, .slip-std .big { transition: color .2s ease; }
+}
+.real-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 14px; }
+.real-grid .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.real-grid .stat b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.real-grid .stat span { font-size: 0.85rem; color: var(--ink-2); }
+.cohorts td, .cohorts th { vertical-align: top; }
+.cohorts td:first-child { font-weight: 700; color: var(--ink); }
+.cohorts .muted { color: var(--muted); }
+@media (max-width: 860px) { .real-grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <div class="brand">
+        <div class="element-tile" aria-hidden="true"><span class="z">3</span><span class="sym">Li</span><span class="m">6.94</span></div>
+        <div>
+          <div class="brand-name">Lithos</div>
+          <div class="brand-sub">A design for lithium care · research prototype</div>
+        </div>
+      </div>
+      <h1>Make every lithium level count</h1>
+      <p class="lede">Much of what makes clinicians wary of lithium is the work of managing it: blood tests timed to the hour, interacting drugs prescribed by someone else, kidneys that need watching for decades. Lithos is a design for a lithium care system that takes that work off people's hands, with a Bayesian engine at its core. Whether that leads to more appropriate prescribing is the hypothesis it is built to test.</p>
+      <p class="hint">The slip shows a real engine calculation. The blood was drawn at 3:30 in the afternoon, 18.5 hours after the evening dose; the engine reports what a correctly timed 12-hour level would have shown.</p>
+    </div>
+    <figure class="slip" id="heroSlip" aria-label="Example pathology result with standardised 12-hour level"></figure>
+  </header>
+
+  <section id="try" aria-labelledby="tryTitle">
+    <div class="section-head">
+      <p class="eyebrow">Try the engine</p>
+      <h2 id="tryTitle">A level drawn whenever suits the patient</h2>
+      <p class="prose">Pick a situation or change the numbers. The engine fits two published-model priors to the patient's kidney function, size and dosing history, weighs them by how well each explains the level, and reports the standardised 12-hour level with a 90% credible interval, the dose most likely to land in the target range, and when to check again. The patients are examples; nothing here is for clinical use.</p>
+    </div>
+    <div class="presets" role="group" aria-label="Example situations" id="presets"></div>
+    <div class="instrument">
+      <form class="panel" id="inputs" autocomplete="off">
+        <fieldset>
+          <legend>Patient</legend>
+          <div class="field"><label for="age">Age (years)</label><input id="age" type="number" min="18" max="95" step="1"></div>
+          <div class="field"><label for="sex">Sex</label><select id="sex"><option value="F">Female</option><option value="M">Male</option></select></div>
+          <div class="field"><label for="wt">Weight (kg)</label><input id="wt" type="number" min="35" max="200" step="1"></div>
+          <div class="field"><label for="ht">Height (cm)</label><input id="ht" type="number" min="130" max="210" step="1"></div>
+          <div class="field"><label for="scr">Creatinine (µmol/L)</label><input id="scr" type="number" min="30" max="400" step="1">
+            <span class="derived" id="renalDerived"></span></div>
+        </fieldset>
+        <fieldset>
+          <legend>Lithium (lithium carbonate 250 mg tablets)</legend>
+          <div class="field"><label for="regimen">Regimen</label><select id="regimen"><option value="nocte">Once nightly, 21:00</option><option value="bd">Twice daily, 08:00 + 20:00</option></select></div>
+          <div class="field"><label for="dose">Total daily dose</label><select id="dose"></select></div>
+          <div class="field"><label for="days">Days on this dose</label><input id="days" type="number" min="1" max="365" step="1"></div>
+          <div class="field"><label for="target">Target range</label><select id="target"><option value="0.6-0.8">0.6–0.8 standard</option><option value="0.4-0.6">0.4–0.6 older adult / tolerability</option><option value="0.8-1.0">0.8–1.0 higher</option></select></div>
+        </fieldset>
+        <fieldset>
+          <legend>Blood test</legend>
+          <div class="field" id="lastDoseField"><label for="lastDose">Last dose before the test</label><select id="lastDose"><option value="evening">Evening dose</option><option value="morning">Morning dose</option></select></div>
+          <div class="range-wrap">
+            <div class="range-label"><label for="hrs">Hours after that dose</label><b id="hrsOut"></b></div>
+            <input id="hrs" type="range" min="1" max="24" step="0.5">
+            <span class="hint" id="clockOut"></span>
+          </div>
+          <div class="field"><label for="level">Measured level (mmol/L)</label><input id="level" type="number" min="0.05" max="4" step="0.01"></div>
+        </fieldset>
+      </form>
+
+      <div class="outputs">
+        <div class="out-grid">
+          <div class="panel verdict" aria-live="polite">
+            <p class="eyebrow">Standardised 12-hour level</p>
+            <div class="std" id="stdVal">–</div>
+            <div id="stdStatus"></div>
+            <dl class="compare">
+              <dt>As measured</dt><dd id="rawRead"></dd>
+              <dt>Engine</dt><dd id="engRead"></dd>
+            </dl>
+            <ul class="flags" id="flags"></ul>
+          </div>
+          <div class="panel rec" aria-live="polite">
+            <p class="eyebrow">Recommendation</p>
+            <h3 id="recHead">–</h3>
+            <div class="dose" id="recDose"></div>
+            <div class="rec-stats" id="recStats"></div>
+            <p class="hint" id="recNext"></p>
+            <p class="model-line" id="modelLine"></p>
+          </div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Where the level sits</p>
+          <div class="chart-box" id="gauge"></div>
+          <p class="hint">Bands follow the ISBD/IGSLi 2019 recommendations and US labelling (toxic from 1.5). The gauge is a nod to the "lithiumeter" framework of Malhi, Tanious and Gershon (2011).</p>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Concentration over the last three days</p>
+          <div class="chart-box" id="curve"></div>
+          <div class="legend">
+            <span><i class="key" style="background:var(--series-engine)"></i>Engine estimate (median)</span>
+            <span><i class="key" style="background:var(--accent-wash);height:9px"></i>90% band</span>
+            <span><i class="key dot" style="background:var(--ink)"></i>Measured level</span>
+            <span><i class="key" style="background:var(--band-target);height:9px"></i>Target range</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="whatTitle">
+    <div class="section-head">
+      <p class="eyebrow">The design</p>
+      <h2 id="whatTitle">Five things it does that nothing else does together</h2>
+    </div>
+    <div class="caps">
+      <div class="cap"><h3>Every blood test counts, whenever it is taken</h3><p>Any sample with a recorded dose time is converted to the standardised 12-hour level every guideline is written in, with an honest interval, including before steady state. It builds on Amdisen's 1977 standard and the recent eLi12 work, and adds individual models, uncertainty and history. When a sample can't support a decision, it says so and asks for a better-timed one.</p><p class="src">About half of real-world levels are not drawn at 12 hours.</p></div>
+      <div class="cap"><h3>The right dose in fewer tests</h3><p>The first dose comes from kidney function, age and body composition; every level updates a personal model, and dose changes don't have to wait a week for steady state.</p><p class="src">Published single models predict poorly on new patients, so the engine weighs several.</p></div>
+      <div class="cap"><h3>Forecasts, not alerts</h3><p>When a GP selects ramipril or a thiazide, the software forecasts this patient's new level, proposes the compensating dose and books the check level: in the prescribing screen where the software allows it, and through the pharmacy and lithium team where it doesn't. The same logic covers sick days, heatwaves, surgery and childbirth.</p><p class="src">Starting an interacting drug: ~30-fold odds of toxicity, even with alerts firing.</p></div>
+      <div class="cap"><h3>Monitoring follows risk</h3><p>The guideline calendar is the floor. The forecast brings tests forward for people near the ceiling, on interacting drugs or with falling eGFR, and the kidney trajectory is tracked for life with NICE and KDIGO rules.</p><p class="src">Fully compliant monitoring reaches only about one patient in six.</p></div>
+      <div class="cap"><h3>Nobody has to remember</h3><p>Recall, pathology requests, reminders, results, interpretation, sign-off and patient instructions form one loop shared by the patient, GP, psychiatrist, lab and pharmacist.</p><p class="src">Registers with active recall work; reminders alone did not.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="simTitle">
+    <div class="section-head">
+      <p class="eyebrow">In-silico trials</p>
+      <h2 id="simTitle">What the simulations show</h2>
+      <p class="prose" id="simIntro"></p>
+    </div>
+    <div class="sim-grid" id="simGrid"></div>
+    <p class="caveat">Simulations test whether the mechanisms work under stated assumptions; they are not evidence of clinical benefit. The virtual patients come from a deliberately different model than the engine uses, miss doses and are sampled at realistic times.</p>
+  </section>
+
+  <!-- REAL-PATIENTS -->
+
+  <section aria-labelledby="whyTitle">
+    <div class="section-head">
+      <p class="eyebrow">Why this hasn't happened yet</p>
+      <h2 id="whyTitle">The gap is a system, not an algorithm</h2>
+      <p class="prose">Bayesian lithium forecasting has been published since the late 1980s, and none of the established precision-dosing products lists lithium. Three drugs and one lab calculation show what it takes.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table class="analogues">
+        <thead><tr><th>Analogue</th><th>What made it work</th><th>What Lithos borrows</th></tr></thead>
+        <tbody>
+          <tr><td>Vancomycin</td><td>A guideline naming Bayesian software as preferred, a pharmacist who owns dosing, EHR-embedded apps, any-time levels. Even so, under half of surveyed US hospitals had adopted it a year later.</td><td>Any-time sampling, EHR-embedded forecasts and a deliberate guideline strategy</td></tr>
+          <tr><td>Warfarin</td><td>The INR standardised the measurement; time in therapeutic range became the quality metric; self-testing helped selected, trained patients.</td><td>Lithium time-in-range as the quality metric, and home or point-of-care testing for some patients</td></tr>
+          <tr><td>eGFR</td><td>Labs report a calculated value automatically beside the measured creatinine, from a published equation that changes only by announced revision.</td><td>The model for the standardised 12-hour level: the measured value stays first; the estimate is frozen, versioned and validated like an assay</td></tr>
+          <tr><td>Clozapine</td><td>"No blood, no drug" registries enforced monitoring, at a cost to access.</td><td>Soft gating: pharmacy-visible monitoring status and refill-time checks, never a block on a mood stabiliser</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="planTitle">
+    <div class="section-head">
+      <p class="eyebrow">Getting it used</p>
+      <h2 id="planTitle">Start where adoption is frictionless</h2>
+      <p class="prose">Lithium is a cheap generic with no commercial sponsor, so the plan leans on pathology labs, specialist clinics and an open, public-good engine.</p>
+    </div>
+    <div class="phases">
+      <div class="phase"><span class="when">0–6 months</span><h3>Validate</h3><p>Validate on real patients with recorded dose times against a pre-specified plan: MIMIC-IV hospital records (the converter is ready), then the eLi12 group and lithium clinics. Check the rules against RANZCP 2020. Run a clinician workspace in one lithium clinic, with a go/no-go on capturing dose times for at least 80% of levels.</p></div>
+      <div class="phase"><span class="when">6–18 months</span><h3>Shadow and pilot</h3><p>Run silently alongside care; pilot a standardised 12-hour level on a pathology partner's reports; add interaction forecasts in one GP software system and a perinatal module.</p></div>
+      <div class="phase"><span class="when">18–36 months</span><h3>Trial and standardise</h3><p>A stepped-wedge trial with lithium time-in-range as the primary outcome; the patient app; point-of-care testing for rural and remote sites; and standards work on reporting and the metric.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Research prototype.</strong> Not a medical device and not for clinical use. Model parameters are provisional: one prior is assembled from published physiology and the other's variability terms are assumed. Both agree with published cohorts at the population level but have not been validated on individual patients. Simulated results test mechanisms, not clinical benefit. Guideline rules follow NICE CG185 and ISBD/IGSLi 2019; RANZCP 2020 could not be checked.</p>
+    <p>The design document, evidence brief (70 tagged findings with verification labels), Python engine, tests and simulation code are in the <a href="https://github.com/lukevj1/m24/tree/claude/lithium-monitoring-software-qcrc1l/lithium">repository</a>.</p>
+  </footer>
+</div>

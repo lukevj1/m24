@@ -1,0 +1,1291 @@
+<title>Lithos lithium care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+:root {
+  --ground: #f4f3f6;
+  --surface: #ffffff;
+  --surface-2: #f9f8fb;
+  --ink: #1c1a21;
+  --ink-2: #55505e;
+  --muted: #7f7988;
+  --line: #e2dfe8;
+  --line-2: #d0ccd8;
+  --accent: #7a3e96;
+  --accent-ink: #6b3386;
+  --accent-wash: #f0e7f5;
+  --series-engine: #7a3e96;
+  --series-status: #8a8591;
+  --good: #1e7a45;
+  --good-wash: #e3f2e8;
+  --warn: #9a6100;
+  --warn-wash: #fbefd9;
+  --crit: #b3261e;
+  --crit-wash: #fbe4e2;
+  --band-sub: #eceaf0;
+  --band-low: #e6eef8;
+  --band-target: #dcefe2;
+  --band-high: #f6ecd6;
+  --band-above: #f8dfc9;
+  --band-toxic: #f5d2cf;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #121016;
+    --surface: #1b1820;
+    --surface-2: #211d27;
+    --ink: #f2eff5;
+    --ink-2: #c3bdcb;
+    --muted: #938c9d;
+    --line: #2e2935;
+    --line-2: #3d3746;
+    --accent: #c592e0;
+    --accent-ink: #d4abea;
+    --accent-wash: #2b2235;
+    --series-engine: #a878c8;
+    --series-status: #6e6977;
+    --good: #5cc98a;
+    --good-wash: #16291e;
+    --warn: #e6ab45;
+    --warn-wash: #2e2414;
+    --crit: #f07a70;
+    --crit-wash: #331b1a;
+    --band-sub: #25212b;
+    --band-low: #1c2533;
+    --band-target: #182a1f;
+    --band-high: #2d2616;
+    --band-above: #33231a;
+    --band-toxic: #3a1d1c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #121016;
+  --surface: #1b1820;
+  --surface-2: #211d27;
+  --ink: #f2eff5;
+  --ink-2: #c3bdcb;
+  --muted: #938c9d;
+  --line: #2e2935;
+  --line-2: #3d3746;
+  --accent: #c592e0;
+  --accent-ink: #d4abea;
+  --accent-wash: #2b2235;
+  --series-engine: #a878c8;
+  --series-status: #6e6977;
+  --good: #5cc98a;
+  --good-wash: #16291e;
+  --warn: #e6ab45;
+  --warn-wash: #2e2414;
+  --crit: #f07a70;
+  --crit-wash: #331b1a;
+  --band-sub: #25212b;
+  --band-low: #1c2533;
+  --band-target: #182a1f;
+  --band-high: #2d2616;
+  --band-above: #33231a;
+  --band-toxic: #3a1d1c;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-inline: 16px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); line-height: 1.06; }
+h2 { font-size: clamp(1.55rem, 3.2vw, 2.1rem); line-height: 1.15; }
+h3 { font-size: 1.2rem; line-height: 1.25; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-data); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.12rem; color: var(--ink-2); max-width: 62ch; }
+.prose { max-width: 66ch; color: var(--ink-2); display: flex; flex-direction: column; gap: 12px; }
+.prose strong { color: var(--ink); }
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-data); }
+.num { font-variant-numeric: tabular-nums; }
+section { display: flex; flex-direction: column; gap: 20px; }
+.section-head { display: flex; flex-direction: column; gap: 8px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 36px; align-items: center; }
+.hero-text { display: flex; flex-direction: column; gap: 18px; }
+.element-tile {
+  width: 64px; height: 64px; border: 1.5px solid var(--ink); border-radius: 4px; display: grid; place-items: center;
+  font-family: var(--font-data); position: relative; flex-shrink: 0;
+}
+.element-tile .z { position: absolute; top: 3px; left: 6px; font-size: 0.66rem; }
+.element-tile .sym { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; margin-top: 6px; }
+.element-tile .m { position: absolute; bottom: 3px; font-size: 0.6rem; color: var(--ink-2); }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; }
+.brand-sub { color: var(--muted); font-size: 0.9rem; }
+
+/* the pathology slip */
+.slip {
+  margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  font-family: var(--font-data); font-size: 0.82rem; box-shadow: 0 1px 0 var(--line), 0 12px 32px -18px rgba(40, 20, 60, 0.25);
+  overflow: hidden;
+}
+.slip-head { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px dashed var(--line-2); color: var(--muted); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.slip-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.slip-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline; }
+.slip-row .k { color: var(--ink-2); }
+.slip-row .v { font-variant-numeric: tabular-nums; text-align: right; }
+.slip-row.raw .v { font-size: 1.05rem; }
+.slip-std { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.slip-std .big { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; font-weight: 600; color: var(--accent-ink); }
+.slip-std .ci { color: var(--ink-2); }
+.slip-note { color: var(--muted); font-size: 0.72rem; line-height: 1.45; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; width: fit-content; }
+.pill.good { background: var(--good-wash); color: var(--good); }
+.pill.warn { background: var(--warn-wash); color: var(--warn); }
+.pill.crit { background: var(--crit-wash); color: var(--crit); }
+.pill.info { background: var(--accent-wash); color: var(--accent-ink); }
+
+/* instrument */
+.instrument { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset { font: inherit; font-size: 0.88rem; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); cursor: pointer; }
+.preset[aria-pressed="true"] { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+legend { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 6px; }
+.field { display: grid; grid-template-columns: 1fr 118px; gap: 10px; align-items: center; }
+.field label { font-size: 0.9rem; color: var(--ink-2); }
+.field input, .field select {
+  font: inherit; font-family: var(--font-data); font-size: 0.9rem; width: 100%; padding: 6px 8px; border-radius: 7px;
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink);
+}
+.field .derived { font-family: var(--font-data); font-size: 0.8rem; color: var(--muted); grid-column: 1 / -1; margin-top: -4px; }
+.range-wrap { display: flex; flex-direction: column; gap: 4px; }
+.range-wrap input[type="range"] { width: 100%; accent-color: var(--accent); }
+.range-label { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--ink-2); }
+.range-label b { font-family: var(--font-data); color: var(--ink); font-weight: 500; }
+.hint { font-size: 0.8rem; color: var(--muted); }
+
+.outputs { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.out-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.verdict { display: flex; flex-direction: column; gap: 8px; }
+.verdict .std { font-family: var(--font-display); font-size: 2.6rem; font-weight: 600; line-height: 1; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.verdict .std small { font-family: var(--font-body); font-size: 0.95rem; color: var(--ink-2); font-weight: 400; margin-left: 4px; }
+.compare { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.9rem; }
+.compare dt { color: var(--muted); }
+.compare dd { margin: 0; color: var(--ink); }
+.flags { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; color: var(--ink-2); }
+.flags li { padding-left: 14px; position: relative; }
+.flags li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.rec h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
+.rec .dose { font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; }
+.rec-stats { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.88rem; color: var(--ink-2); }
+.rec-stats b { color: var(--ink); font-family: var(--font-data); font-weight: 500; }
+.model-line { font-size: 0.8rem; color: var(--muted); font-family: var(--font-data); }
+
+/* gauge + chart */
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; }
+.axis text, .tick text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 6px 9px; font-size: 0.8rem; font-family: var(--font-data); color: var(--ink); box-shadow: 0 6px 18px -8px rgba(0,0,0,.35);
+  white-space: nowrap; z-index: 2;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.8rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.key.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* capabilities */
+.caps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px 32px; }
+.cap { display: flex; flex-direction: column; gap: 6px; padding-top: 14px; border-top: 1.5px solid var(--ink); }
+.cap h3 { font-size: 1.15rem; }
+.cap p { color: var(--ink-2); font-size: 0.95rem; }
+.cap .src { font-size: 0.78rem; color: var(--muted); font-family: var(--font-data); }
+
+/* sim */
+.sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.sim-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.sim-card h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
+.sim-card .sub { font-size: 0.85rem; color: var(--ink-2); }
+details { font-size: 0.85rem; color: var(--ink-2); }
+summary { cursor: pointer; color: var(--accent-ink); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; color: var(--ink); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-data); }
+.caveat { font-size: 0.85rem; color: var(--muted); max-width: 70ch; }
+
+/* analogues + plan */
+.analogues td:first-child { font-weight: 700; color: var(--ink); white-space: nowrap; }
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.phase { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.phase .when { font-family: var(--font-data); font-size: 0.75rem; color: var(--accent-ink); letter-spacing: 0.06em; text-transform: uppercase; }
+.phase p { font-size: 0.92rem; color: var(--ink-2); }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: var(--muted); max-width: 80ch; }
+
+@media (max-width: 860px) {
+  .hero, .instrument, .out-grid { grid-template-columns: minmax(0, 1fr); }
+  .field { grid-template-columns: 1fr 110px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .std, .slip-std .big { transition: color .2s ease; }
+}
+.real-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 14px; }
+.real-grid .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.real-grid .stat b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.real-grid .stat span { font-size: 0.85rem; color: var(--ink-2); }
+.cohorts td, .cohorts th { vertical-align: top; }
+.cohorts td:first-child { font-weight: 700; color: var(--ink); }
+.cohorts .muted { color: var(--muted); }
+@media (max-width: 860px) { .real-grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <div class="brand">
+        <div class="element-tile" aria-hidden="true"><span class="z">3</span><span class="sym">Li</span><span class="m">6.94</span></div>
+        <div>
+          <div class="brand-name">Lithos</div>
+          <div class="brand-sub">A design for lithium care · research prototype</div>
+        </div>
+      </div>
+      <h1>Make every lithium level count</h1>
+      <p class="lede">Much of what makes clinicians wary of lithium is the work of managing it: blood tests timed to the hour, interacting drugs prescribed by someone else, kidneys that need watching for decades. Lithos is a design for a lithium care system that takes that work off people's hands, with a Bayesian engine at its core. Whether that leads to more appropriate prescribing is the hypothesis it is built to test.</p>
+      <p class="hint">The slip shows a real engine calculation. The blood was drawn at 3:30 in the afternoon, 18.5 hours after the evening dose; the engine reports what a correctly timed 12-hour level would have shown.</p>
+    </div>
+    <figure class="slip" id="heroSlip" aria-label="Example pathology result with standardised 12-hour level"></figure>
+  </header>
+
+  <section id="try" aria-labelledby="tryTitle">
+    <div class="section-head">
+      <p class="eyebrow">Try the engine</p>
+      <h2 id="tryTitle">A level drawn whenever suits the patient</h2>
+      <p class="prose">Pick a situation or change the numbers. The engine fits two published-model priors to the patient's kidney function, size and dosing history, weighs them by how well each explains the level, and reports the standardised 12-hour level with a 90% credible interval, the dose most likely to land in the target range, and when to check again. The patients are examples; nothing here is for clinical use.</p>
+    </div>
+    <div class="presets" role="group" aria-label="Example situations" id="presets"></div>
+    <div class="instrument">
+      <form class="panel" id="inputs" autocomplete="off">
+        <fieldset>
+          <legend>Patient</legend>
+          <div class="field"><label for="age">Age (years)</label><input id="age" type="number" min="18" max="95" step="1"></div>
+          <div class="field"><label for="sex">Sex</label><select id="sex"><option value="F">Female</option><option value="M">Male</option></select></div>
+          <div class="field"><label for="wt">Weight (kg)</label><input id="wt" type="number" min="35" max="200" step="1"></div>
+          <div class="field"><label for="ht">Height (cm)</label><input id="ht" type="number" min="130" max="210" step="1"></div>
+          <div class="field"><label for="scr">Creatinine (µmol/L)</label><input id="scr" type="number" min="30" max="400" step="1">
+            <span class="derived" id="renalDerived"></span></div>
+        </fieldset>
+        <fieldset>
+          <legend>Lithium (lithium carbonate 250 mg tablets)</legend>
+          <div class="field"><label for="regimen">Regimen</label><select id="regimen"><option value="nocte">Once nightly, 21:00</option><option value="bd">Twice daily, 08:00 + 20:00</option></select></div>
+          <div class="field"><label for="dose">Total daily dose</label><select id="dose"></select></div>
+          <div class="field"><label for="days">Days on this dose</label><input id="days" type="number" min="1" max="365" step="1"></div>
+          <div class="field"><label for="target">Target range</label><select id="target"><option value="0.6-0.8">0.6–0.8 standard</option><option value="0.4-0.6">0.4–0.6 older adult / tolerability</option><option value="0.8-1.0">0.8–1.0 higher</option></select></div>
+        </fieldset>
+        <fieldset>
+          <legend>Blood test</legend>
+          <div class="field" id="lastDoseField"><label for="lastDose">Last dose before the test</label><select id="lastDose"><option value="evening">Evening dose</option><option value="morning">Morning dose</option></select></div>
+          <div class="range-wrap">
+            <div class="range-label"><label for="hrs">Hours after that dose</label><b id="hrsOut"></b></div>
+            <input id="hrs" type="range" min="1" max="24" step="0.5">
+            <span class="hint" id="clockOut"></span>
+          </div>
+          <div class="field"><label for="level">Measured level (mmol/L)</label><input id="level" type="number" min="0.05" max="4" step="0.01"></div>
+        </fieldset>
+      </form>
+
+      <div class="outputs">
+        <div class="out-grid">
+          <div class="panel verdict" aria-live="polite">
+            <p class="eyebrow">Standardised 12-hour level</p>
+            <div class="std" id="stdVal">–</div>
+            <div id="stdStatus"></div>
+            <dl class="compare">
+              <dt>As measured</dt><dd id="rawRead"></dd>
+              <dt>Engine</dt><dd id="engRead"></dd>
+            </dl>
+            <ul class="flags" id="flags"></ul>
+          </div>
+          <div class="panel rec" aria-live="polite">
+            <p class="eyebrow">Recommendation</p>
+            <h3 id="recHead">–</h3>
+            <div class="dose" id="recDose"></div>
+            <div class="rec-stats" id="recStats"></div>
+            <p class="hint" id="recNext"></p>
+            <p class="model-line" id="modelLine"></p>
+          </div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Where the level sits</p>
+          <div class="chart-box" id="gauge"></div>
+          <p class="hint">Bands follow the ISBD/IGSLi 2019 recommendations and US labelling (toxic from 1.5). The gauge is a nod to the "lithiumeter" framework of Malhi, Tanious and Gershon (2011).</p>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">Concentration over the last three days</p>
+          <div class="chart-box" id="curve"></div>
+          <div class="legend">
+            <span><i class="key" style="background:var(--series-engine)"></i>Engine estimate (median)</span>
+            <span><i class="key" style="background:var(--accent-wash);height:9px"></i>90% band</span>
+            <span><i class="key dot" style="background:var(--ink)"></i>Measured level</span>
+            <span><i class="key" style="background:var(--band-target);height:9px"></i>Target range</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="whatTitle">
+    <div class="section-head">
+      <p class="eyebrow">The design</p>
+      <h2 id="whatTitle">Five things it does that nothing else does together</h2>
+    </div>
+    <div class="caps">
+      <div class="cap"><h3>Every blood test counts, whenever it is taken</h3><p>Any sample with a recorded dose time is converted to the standardised 12-hour level every guideline is written in, with an honest interval, including before steady state. It builds on Amdisen's 1977 standard and the recent eLi12 work, and adds individual models, uncertainty and history. When a sample can't support a decision, it says so and asks for a better-timed one.</p><p class="src">About half of real-world levels are not drawn at 12 hours.</p></div>
+      <div class="cap"><h3>The right dose in fewer tests</h3><p>The first dose comes from kidney function, age and body composition; every level updates a personal model, and dose changes don't have to wait a week for steady state.</p><p class="src">Published single models predict poorly on new patients, so the engine weighs several.</p></div>
+      <div class="cap"><h3>Forecasts, not alerts</h3><p>When a GP selects ramipril or a thiazide, the software forecasts this patient's new level, proposes the compensating dose and books the check level: in the prescribing screen where the software allows it, and through the pharmacy and lithium team where it doesn't. The same logic covers sick days, heatwaves, surgery and childbirth.</p><p class="src">Starting an interacting drug: ~30-fold odds of toxicity, even with alerts firing.</p></div>
+      <div class="cap"><h3>Monitoring follows risk</h3><p>The guideline calendar is the floor. The forecast brings tests forward for people near the ceiling, on interacting drugs or with falling eGFR, and the kidney trajectory is tracked for life with NICE and KDIGO rules.</p><p class="src">Fully compliant monitoring reaches only about one patient in six.</p></div>
+      <div class="cap"><h3>Nobody has to remember</h3><p>Recall, pathology requests, reminders, results, interpretation, sign-off and patient instructions form one loop shared by the patient, GP, psychiatrist, lab and pharmacist.</p><p class="src">Registers with active recall work; reminders alone did not.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="simTitle">
+    <div class="section-head">
+      <p class="eyebrow">In-silico trials</p>
+      <h2 id="simTitle">What the simulations show</h2>
+      <p class="prose" id="simIntro"></p>
+    </div>
+    <div class="sim-grid" id="simGrid"></div>
+    <p class="caveat">Simulations test whether the mechanisms work under stated assumptions; they are not evidence of clinical benefit. The virtual patients come from a deliberately different model than the engine uses, miss doses and are sampled at realistic times.</p>
+  </section>
+
+  <section aria-labelledby="realTitle">
+        <div class="section-head">
+          <p class="eyebrow">Real patients, so far</p>
+          <h2 id="realTitle">Checked against eight published patient cohorts</h2>
+          <p class="prose">No individual-level lithium dataset could be reached from where this was built. As a first check, the engine was given a patient resembling each published cohort, with no lithium levels, and its predictions were compared with what the papers measured in real people.</p>
+        </div>
+        <div class="real-grid">
+          <div class="stat"><b>17 of 21</b><span>quantities inside the published mean ± 1 SD (or reported range)</span></div>
+          <div class="stat"><b>15 of 21</b><span>within 20% of the published mean, a stricter test</span></div>
+          <div class="stat"><b>Slow for older adults</b><span>half-life +25%, peak +31% vs one older cohort: first doses err low, and the first level corrects them</span></div>
+        </div>
+        <details>
+          <summary>All 21 comparisons</summary>
+          <div class="tbl-wrap">
+            <table class="cohorts">
+              <thead><tr><th>Cohort</th><th>Quantity</th><th>Published</th><th>Engine prior, median (90% range)</th><th>vs published mean</th><th>In band?</th></tr></thead>
+              <tbody>
+                <tr><td>Older adults</td><td>Clearance</td><td>15.6 +/- 4.0 mL/min</td><td>13.2 <span class="muted">(8.3–20.3)</span></td><td>-16%</td><td><span class="pill good">inside</span></td></tr><tr><td>Older adults</td><td>Terminal half-life</td><td>26.9 +/- 5.5 h</td><td>33.5 <span class="muted">(20.2–56.4)</span></td><td>+25%</td><td><span class="pill warn">3% above</span></td></tr><tr><td>Older adults</td><td>V_area</td><td>0.64 +/- 0.16 L/kg</td><td>0.56 <span class="muted">(0.40–0.77)</span></td><td>-12%</td><td><span class="pill good">inside</span></td></tr><tr><td>Older adults</td><td>Steady-state peak on 0.21 mmol/kg/day</td><td>0.83 +/- 0.25 mmol/L</td><td>1.09 <span class="muted">(0.78–1.52)</span></td><td>+31%</td><td><span class="pill warn">1% above</span></td></tr><tr><td>Older adults</td><td>Time to peak</td><td>2.2 +/- 1.2 h</td><td>1.9 <span class="muted">(1.8–2.1)</span></td><td>-14%</td><td><span class="pill good">inside</span></td></tr><tr><td>Older adults</td><td>Distribution phase ~complete (kidney model only)</td><td>10.6 +/- 3.0 h</td><td>10.0 <span class="muted">(6.9–13.6)</span></td><td>-6%</td><td><span class="pill good">inside</span></td></tr><tr><td>Obese adults</td><td>Vss</td><td>0.42 +/- 0.09 L/kg</td><td>0.50 <span class="muted">(0.36–0.70)</span></td><td>+19%</td><td><span class="pill good">inside</span></td></tr><tr><td>Obese adults</td><td>Clearance</td><td>33.9 +/- 7.0 mL/min</td><td>31.5 <span class="muted">(20.2–48.5)</span></td><td>-7%</td><td><span class="pill good">inside</span></td></tr><tr><td>Normal-weight controls</td><td>Vss</td><td>0.66 +/- 0.16 L/kg</td><td>0.69 <span class="muted">(0.50–0.96)</span></td><td>+5%</td><td><span class="pill good">inside</span></td></tr><tr><td>Normal-weight controls</td><td>Clearance</td><td>23.0 +/- 6.2 mL/min</td><td>25.3 <span class="muted">(16.5–39.9)</span></td><td>+10%</td><td><span class="pill good">inside</span></td></tr><tr><td>Healthy adults</td><td>Clearance</td><td>22-43 (range) mL/min</td><td>26.4 <span class="muted">(17.1–41.3)</span></td><td>-19%</td><td><span class="pill good">inside</span></td></tr><tr><td>Inpatients</td><td>Volume</td><td>0.79 +/- 0.34 L/kg</td><td>0.69 <span class="muted">(0.49–0.97)</span></td><td>-12%</td><td><span class="pill good">inside</span></td></tr><tr><td>Inpatients</td><td>Renal clearance</td><td>24.4 +/- 8.0 mL/min</td><td>25.0 <span class="muted">(16.4–38.6)</span></td><td>+3%</td><td><span class="pill good">inside</span></td></tr><tr><td>Inpatients</td><td>Half-life</td><td>28.9 +/- 7.9 h</td><td>23.9 <span class="muted">(14.1–40.6)</span></td><td>-17%</td><td><span class="pill good">inside</span></td></tr><tr><td>Single-dose study</td><td>Clearance</td><td>33.2 +/- 15.5 mL/min</td><td>25.2 <span class="muted">(16.5–39.0)</span></td><td>-24%</td><td><span class="pill good">inside</span></td></tr><tr><td>Single-dose study</td><td>Half-life</td><td>15.3 +/- 6.1 h</td><td>19.8 <span class="muted">(11.0–34.5)</span></td><td>+29%</td><td><span class="pill good">inside</span></td></tr><tr><td>IR vs CR</td><td>Time to peak, IR</td><td>1.44 h</td><td>1.8 <span class="muted">(1.6–1.9)</span></td><td>+22%</td><td><span class="pill good">inside</span></td></tr><tr><td>IR vs CR</td><td>Time to peak, CR</td><td>4.25 h</td><td>4.2 <span class="muted">(3.7–4.7)</span></td><td>-1%</td><td><span class="pill good">inside</span></td></tr><tr><td>IR vs CR</td><td>Cmax ratio CR/IR</td><td>0.78 ratio</td><td>0.71 <span class="muted">(0.68–0.73)</span></td><td>-10%</td><td><span class="pill good">inside</span></td></tr><tr><td>Once-daily SR</td><td>12-h / 24-h level</td><td>1.37 (0.82 vs 0.60) ratio</td><td>1.53 <span class="muted">(1.31–2.04)</span></td><td>+12%</td><td><span class="pill warn">2% above</span></td></tr><tr><td>Healthy volunteers</td><td>12-h level on 1569 mg/day</td><td>0.67-0.74 (weekly means) mmol/L</td><td>0.85 <span class="muted">(0.49–1.45)</span></td><td>+20%</td><td><span class="pill warn">6% above</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p class="caveat">This is a consistency check, not validation. Some of these cohorts informed the calibration, most papers did not report covariates, and agreement on averages says nothing about forecasting an individual. The individual-level test (forecast each patient's next level from their earlier ones) is built and ready to run where credentialed data live: MIMIC-IV hospital records, trial data such as Bipolar CHOICE, or collaborators such as the eLi12 group in Denmark.</p>
+      </section>
+
+  <section aria-labelledby="whyTitle">
+    <div class="section-head">
+      <p class="eyebrow">Why this hasn't happened yet</p>
+      <h2 id="whyTitle">The gap is a system, not an algorithm</h2>
+      <p class="prose">Bayesian lithium forecasting has been published since the late 1980s, and none of the established precision-dosing products lists lithium. Three drugs and one lab calculation show what it takes.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table class="analogues">
+        <thead><tr><th>Analogue</th><th>What made it work</th><th>What Lithos borrows</th></tr></thead>
+        <tbody>
+          <tr><td>Vancomycin</td><td>A guideline naming Bayesian software as preferred, a pharmacist who owns dosing, EHR-embedded apps, any-time levels. Even so, under half of surveyed US hospitals had adopted it a year later.</td><td>Any-time sampling, EHR-embedded forecasts and a deliberate guideline strategy</td></tr>
+          <tr><td>Warfarin</td><td>The INR standardised the measurement; time in therapeutic range became the quality metric; self-testing helped selected, trained patients.</td><td>Lithium time-in-range as the quality metric, and home or point-of-care testing for some patients</td></tr>
+          <tr><td>eGFR</td><td>Labs report a calculated value automatically beside the measured creatinine, from a published equation that changes only by announced revision.</td><td>The model for the standardised 12-hour level: the measured value stays first; the estimate is frozen, versioned and validated like an assay</td></tr>
+          <tr><td>Clozapine</td><td>"No blood, no drug" registries enforced monitoring, at a cost to access.</td><td>Soft gating: pharmacy-visible monitoring status and refill-time checks, never a block on a mood stabiliser</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="planTitle">
+    <div class="section-head">
+      <p class="eyebrow">Getting it used</p>
+      <h2 id="planTitle">Start where adoption is frictionless</h2>
+      <p class="prose">Lithium is a cheap generic with no commercial sponsor, so the plan leans on pathology labs, specialist clinics and an open, public-good engine.</p>
+    </div>
+    <div class="phases">
+      <div class="phase"><span class="when">0–6 months</span><h3>Validate</h3><p>Validate on real patients with recorded dose times against a pre-specified plan: MIMIC-IV hospital records (the converter is ready), then the eLi12 group and lithium clinics. Check the rules against RANZCP 2020. Run a clinician workspace in one lithium clinic, with a go/no-go on capturing dose times for at least 80% of levels.</p></div>
+      <div class="phase"><span class="when">6–18 months</span><h3>Shadow and pilot</h3><p>Run silently alongside care; pilot a standardised 12-hour level on a pathology partner's reports; add interaction forecasts in one GP software system and a perinatal module.</p></div>
+      <div class="phase"><span class="when">18–36 months</span><h3>Trial and standardise</h3><p>A stepped-wedge trial with lithium time-in-range as the primary outcome; the patient app; point-of-care testing for rural and remote sites; and standards work on reporting and the metric.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Research prototype.</strong> Not a medical device and not for clinical use. Model parameters are provisional: one prior is assembled from published physiology and the other's variability terms are assumed. Both agree with published cohorts at the population level but have not been validated on individual patients. Simulated results test mechanisms, not clinical benefit. Guideline rules follow NICE CG185 and ISBD/IGSLi 2019; RANZCP 2020 could not be checked.</p>
+    <p>The design document, evidence brief (70 tagged findings with verification labels), Python engine, tests and simulation code are in the <a href="https://github.com/lukevj1/m24/tree/claude/lithium-monitoring-software-qcrc1l/lithium">repository</a>.</p>
+  </footer>
+</div>
+
+<script>
+// Lithos browser engine: a compact port of the Python prototype (lithos/)
+// for the concept page. One occasion, time-invariant parameters, 1- or
+// 2-compartment oral model, MAP + Laplace posterior, steady-state forecasts.
+// Research prototype - not for clinical use.
+"use strict";
+
+const LithosEngine = (() => {
+  const MMOL_PER_MG = 2 / 73.891; // lithium carbonate
+
+  function crclCG(scr, age, sex, wt) {
+    const mgdl = scr / 88.42;
+    return ((140 - age) * wt) / (72 * mgdl) * (sex === "F" ? 0.85 : 1);
+  }
+  function egfr2021(scr, age, sex) {
+    const s = scr / 88.42, f = sex === "F";
+    const k = f ? 0.7 : 0.9, a = f ? -0.241 : -0.302, r = s / k;
+    return 142 * Math.pow(Math.min(r, 1), a) * Math.pow(Math.max(r, 1), -1.2) * Math.pow(0.9938, age) * (f ? 1.012 : 1);
+  }
+
+  function ffm(wt, ht, sex) {
+    const bmi = wt / ((ht / 100) ** 2);
+    return sex === "F" ? 9270 * wt / (8780 + 244 * bmi) : 9270 * wt / (6680 + 216 * bmi);
+  }
+  function dosingWeight(wt, ht, sex) {
+    const bmi = wt / ((ht / 100) ** 2);
+    if (bmi <= 30) return wt;
+    const ibw = (sex === "F" ? 45.5 : 50) + 0.9 * (ht - 152.4);
+    return ibw + 0.4 * (wt - ibw);
+  }
+  // Priors mirrored from lithos/models.py (drift SD folded into CL for a single occasion).
+  const MODELS = {
+    renal: {
+      name: "Kidney-function 2-compartment", weight: 0.75,
+      typical(c) {
+        const f = ffm(c.wt, c.ht, c.sex), vt = 0.85 * f;
+        const crcl = crclCG(c.scr, c.age, c.sex, dosingWeight(c.wt, c.ht, c.sex));
+        return { cl: 0.23 * 0.06 * crcl, v1: 0.55 * vt, v2: 0.45 * vt, q: 5.5 * Math.pow(f / 55, 0.75) * Math.pow(Math.max(c.age, 18) / 40, -1) };
+      },
+      omega: { cl: 0.25, v1: 0.20 }, ka: { IR: 1.2, SR: 0.40 }, f: { IR: 1, SR: 0.95 },
+      sigmaProp: 0.10, sigmaAdd: 0.02, drift: Math.hypot(0.10, 0.08), distSd: 0.15, distTau: 3.0,
+    },
+    methaneethorn: {
+      name: "Methaneethorn & Sringam 2019", weight: 0.25,
+      // built in adults with acute mania, no kidney covariate: not used for older adults or reduced kidney function
+      applies(c) { return egfr2021(c.scr, c.age, c.sex) >= 60 && c.age < 65; },
+      typical(c) { return { cl: 1.43 * Math.pow(c.wt / 65, 0.425) * Math.pow(Math.max(c.age, 18) / 38, -0.242), v1: 54 }; },
+      omega: { cl: 0.20, v1: 0.20 }, ka: { IR: 0.426, SR: 0.426 }, f: { IR: 1, SR: 0.95 },
+      sigmaProp: 0.12, sigmaAdd: 0.02, drift: Math.hypot(0.10, 0.08), distSd: 0.5, distTau: 2.5,
+    },
+  };
+
+  // --- structural model -----------------------------------------------------
+  // p = {cl, v1, q, v2, ka, f}; returns macro-constants for superposition.
+  function macro(p) {
+    let ka = p.ka;
+    if (!(p.q > 0 && p.v2 > 0)) {
+      let k = p.cl / p.v1;
+      if (Math.abs(ka - k) < 1e-6) ka *= 1.0001;
+      // C = D f ka/(v1 (ka-k)) (e^-kt - e^-ka t)
+      const c = p.f * ka / (p.v1 * (ka - k));
+      return { lam: [k, ka], coef: [c, -c] };
+    }
+    const k10 = p.cl / p.v1, k12 = p.q / p.v1, k21 = p.q / p.v2;
+    const s = k10 + k12 + k21, disc = Math.sqrt(s * s - 4 * k10 * k21);
+    const al = 0.5 * (s + disc), be = 0.5 * (s - disc);
+    if (Math.abs(ka - al) < 1e-6 || Math.abs(ka - be) < 1e-6) ka *= 1.0001;
+    const pre = p.f * ka / p.v1;
+    return {
+      lam: [al, be, ka],
+      coef: [pre * (k21 - al) / ((ka - al) * (be - al)),
+             pre * (k21 - be) / ((ka - be) * (al - be)),
+             pre * (k21 - ka) / ((al - ka) * (be - ka))],
+    };
+  }
+
+  // Concentration (and slope) at time t from doses [{t, mmol}]
+  function conc(p, doses, t) {
+    const m = macro(p);
+    let c = 0, dc = 0;
+    for (const d of doses) {
+      const tau = t - d.t;
+      if (tau < 0) continue;
+      for (let i = 0; i < m.lam.length; i++) {
+        const e = d.mmol * m.coef[i] * Math.exp(-m.lam[i] * tau);
+        c += e; dc -= m.lam[i] * e;
+      }
+    }
+    return [c, dc];
+  }
+
+  // Steady state for a regimen repeating every 24 h: [{clock, mmol}]
+  function steady(p, regimen, clock) {
+    const m = macro(p);
+    let c = 0;
+    for (const r of regimen) {
+      const tau = (((clock - r.clock) % 24) + 24) % 24;
+      for (let i = 0; i < m.lam.length; i++) {
+        c += r.mmol * m.coef[i] * Math.exp(-m.lam[i] * tau) / (1 - Math.exp(-24 * m.lam[i]));
+      }
+    }
+    return c;
+  }
+
+  function halfLife(p) {
+    if (!(p.q > 0 && p.v2 > 0)) return Math.LN2 * p.v1 / p.cl;
+    const k10 = p.cl / p.v1, k12 = p.q / p.v1, k21 = p.q / p.v2, s = k10 + k12 + k21;
+    return Math.LN2 / (0.5 * (s - Math.sqrt(s * s - 4 * k10 * k21)));
+  }
+
+  // --- statistics -----------------------------------------------------------
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {
+    let u = 0, v = 0;
+    while (u === 0) u = rng();
+    v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function nelderMead(f, x0, iters = 400) {
+    const n = x0.length;
+    let pts = [x0.slice()];
+    for (let i = 0; i < n; i++) { const x = x0.slice(); x[i] += 0.3; pts.push(x); }
+    let vals = pts.map(f);
+    for (let it = 0; it < iters; it++) {
+      const idx = vals.map((v, i) => i).sort((a, b) => vals[a] - vals[b]);
+      pts = idx.map(i => pts[i]); vals = idx.map(i => vals[i]);
+      if (Math.abs(vals[n] - vals[0]) < 1e-10) break;
+      const cen = new Array(n).fill(0);
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) cen[j] += pts[i][j] / n;
+      const along = (a) => cen.map((c, j) => c + a * (pts[n][j] - c));
+      const xr = along(-1), fr = f(xr);
+      if (fr < vals[0]) {
+        const xe = along(-2), fe = f(xe);
+        if (fe < fr) { pts[n] = xe; vals[n] = fe; } else { pts[n] = xr; vals[n] = fr; }
+      } else if (fr < vals[n - 1]) { pts[n] = xr; vals[n] = fr; }
+      else {
+        const xc = along(fr < vals[n] ? -0.5 : 0.5), fc = f(xc);
+        if (fc < Math.min(fr, vals[n])) { pts[n] = xc; vals[n] = fc; }
+        else {
+          for (let i = 1; i <= n; i++) { pts[i] = pts[i].map((v, j) => pts[0][j] + 0.5 * (v - pts[0][j])); vals[i] = f(pts[i]); }
+        }
+      }
+    }
+    return pts[0];
+  }
+  function hessian(f, x, h = 1e-3) {
+    const n = x.length, H = [...Array(n)].map(() => new Array(n).fill(0)), f0 = f(x);
+    const sh = (i, a, j, b) => { const y = x.slice(); y[i] += a; if (j !== undefined) y[j] += b; return y; };
+    for (let i = 0; i < n; i++) {
+      H[i][i] = (f(sh(i, h)) - 2 * f0 + f(sh(i, -h))) / (h * h);
+      for (let j = i + 1; j < n; j++) {
+        H[i][j] = H[j][i] = (f(sh(i, h, j, h)) - f(sh(i, h, j, -h)) - f(sh(i, -h, j, h)) + f(sh(i, -h, j, -h))) / (4 * h * h);
+      }
+    }
+    return H;
+  }
+  function inv2(A) {
+    const det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    return [[A[1][1] / det, -A[0][1] / det], [-A[1][0] / det, A[0][0] / det]];
+  }
+  function chol2(S) {
+    const l11 = Math.sqrt(S[0][0]), l21 = S[1][0] / l11, l22 = Math.sqrt(Math.max(S[1][1] - l21 * l21, 1e-12));
+    return [[l11, 0], [l21, l22]];
+  }
+  function quantile(xs, q) {
+    const s = xs.slice().sort((a, b) => a - b), i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
+    return s[lo] + (s[hi] - s[lo]) * (i - lo);
+  }
+
+  // --- the model + fit --------------------------------------------------------
+  // model: {typical(cov)->{cl,v1,q,v2}, omega:{cl,v1}, ka:{IR,SR}, f:{IR,SR}, sigmaProp, sigmaAdd,
+  //         drift: total SD of log-CL drift (added to the prior at a single occasion), distSd, distTau}
+  function individual(model, cov, eta, form) {
+    const tv = model.typical(cov);
+    return { cl: tv.cl * Math.exp(eta[0]), v1: tv.v1 * Math.exp(eta[1]), q: tv.q || 0,
+             v2: (tv.v2 || 0) * Math.exp(eta[1]), ka: model.ka[form], f: model.f[form] };
+  }
+
+  // scen: {cov, form, regimen:[{clock, mg}], days (on regimen), level:{hoursAfterLast, value, timingSd}}
+  function buildDoses(scen) {
+    const doses = [];
+    const days = Math.max(1, scen.days);
+    for (let d = 0; d < days + 1; d++) {
+      for (const r of scen.regimen) doses.push({ t: d * 24 + r.clock, mmol: r.mg * MMOL_PER_MG });
+    }
+    doses.sort((a, b) => a.t - b.t);
+    return doses;
+  }
+
+  function fit(model, scen) {
+    const doses = buildDoses(scen);
+    // Sample time: hours after the last dose that precedes it, on the final day.
+    const lastDay = Math.max(1, scen.days) - 1;
+    const clocks = scen.regimen.map(r => r.clock).sort((a, b) => a - b);
+    const lastClock = scen.lastClock !== undefined ? scen.lastClock : clocks[clocks.length - 1];
+    const tLast = lastDay * 24 + lastClock;
+    const tObs = tLast + scen.level.hoursAfterLast;
+    const used = doses.filter(d => d.t <= tObs + 1e-9);
+    const om = [model.omega.cl, model.omega.v1];
+    const dSd = model.drift || 0;
+    const prior = [om[0] * om[0] + dSd * dSd, om[1] * om[1]];
+    const y = scen.level.value, tsd = scen.level.timingSd ?? 0.25;
+    const since = scen.level.hoursAfterLast;
+    const distSd = model.distSd * Math.exp(-since / model.distTau);
+    const LOG2PI = Math.log(2 * Math.PI);
+    const ofv = (u) => {
+      const p = individual(model, scen.cov, u, scen.form);
+      const [c, dc] = conc(p, used, tObs);
+      const v = model.sigmaAdd ** 2 + (model.sigmaProp ** 2 + distSd ** 2) * c * c + (dc * tsd) ** 2;
+      return (y - c) ** 2 / v + Math.log(v) + LOG2PI + u[0] * u[0] / prior[0] + u[1] * u[1] / prior[1]
+        + Math.log(2 * Math.PI * prior[0]) + Math.log(2 * Math.PI * prior[1]);
+    };
+    const mode = nelderMead(ofv, [0, 0]);
+    const H = hessian(ofv, mode);
+    const A = [[H[0][0] / 2, H[0][1] / 2], [H[1][0] / 2, H[1][1] / 2]];
+    let cov = inv2(A);
+    if (!(cov[0][0] > 0 && cov[1][1] > 0)) cov = [[prior[0], 0], [0, prior[1]]];
+    const detA = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    const logEvidence = -0.5 * ofv(mode) + LOG2PI - 0.5 * Math.log(Math.max(detA, 1e-300));
+    const [pFit, slope] = conc(individual(model, scen.cov, mode, scen.form), used, tObs);
+    return { model, scen, doses, used, tObs, mode, cov, fitted: pFit, slope, logEvidence };
+  }
+
+  function priorOnly(model, scen) {
+    const om = [model.omega.cl, model.omega.v1], dSd = model.drift || 0;
+    return { model, scen, doses: buildDoses(scen), mode: [0, 0],
+             cov: [[om[0] ** 2 + dSd * dSd, 0], [0, om[1] ** 2]], prior: true };
+  }
+
+  function draws(post, n = 800, seed = 7) {
+    const rng = mulberry32(seed), L = chol2(post.cov), out = [];
+    for (let i = 0; i < n; i++) {
+      const z0 = gauss(rng), z1 = gauss(rng);
+      out.push([post.mode[0] + L[0][0] * z0, post.mode[1] + L[1][0] * z0 + L[1][1] * z1]);
+    }
+    return out;
+  }
+
+  // Standardised 12-h level on a regimen [{clock, mg}]
+  function li12(post, regimen, n = 800) {
+    const clock = (Math.max(...regimen.map(r => r.clock)) + 12) % 24;
+    const reg = regimen.map(r => ({ clock: r.clock, mmol: r.mg * MMOL_PER_MG }));
+    const vals = draws(post, n).map(u => steady(individual(post.model, post.scen.cov, u, post.scen.form), reg, clock));
+    return summary(vals);
+  }
+  function summary(vals) {
+    return { median: quantile(vals, 0.5), lo: quantile(vals, 0.05), hi: quantile(vals, 0.95), vals };
+  }
+
+  function recommend(post, opts) {
+    const { target = [0.6, 0.8], step = 250, maxMg = 2000, template = [21], pHighMax = 0.05, high = 1.0 } = opts;
+    const clock = (Math.max(...template) + 12) % 24;
+    const U = draws(post, 800, 11);
+    const unit = template.map(c => U.map(u => steady(individual(post.model, post.scen.cov, u, post.scen.form),
+      [{ clock: c, mmol: MMOL_PER_MG }], clock)));
+    const options = [];
+    for (let k = 1; k * step <= maxMg; k++) {
+      let split;
+      if (template.length === 1) split = [k * step];
+      else {
+        const base = Math.floor(k / template.length), rem = k % template.length;
+        if (base === 0) continue;
+        split = template.map(() => base * step);
+        for (let r = 0; r < rem; r++) split[split.length - 1 - r] += step;
+      }
+      const vals = U.map((_, i) => split.reduce((s, mg, j) => s + mg * unit[j][i], 0));
+      const s = summary(vals);
+      s.pIn = vals.filter(v => v >= target[0] && v <= target[1]).length / vals.length;
+      s.pHigh = vals.filter(v => v > high).length / vals.length;
+      s.daily = split.reduce((a, b) => a + b, 0);
+      s.split = split;
+      options.push(s);
+    }
+    const safe = options.filter(o => o.pHigh <= pHighMax);
+    const center = (target[0] + target[1]) / 2;
+    const pool = safe.length ? safe : options;
+    pool.sort((a, b) => (Math.round(b.pIn * 100) - Math.round(a.pIn * 100)) || (Math.abs(a.median - center) - Math.abs(b.median - center)));
+    const hl = quantile(U.slice(0, 300).map(u => halfLife(individual(post.model, post.scen.cov, u, post.scen.form))), 0.5);
+    return { best: pool[0], options, halfLifeH: hl };
+  }
+
+  // Curve with 90% band over the history window + the observed point
+  function curve(post, tFrom, tTo, npts = 160, n = 200) {
+    const ts = [...Array(npts)].map((_, i) => tFrom + (tTo - tFrom) * i / (npts - 1));
+    const U = draws(post, n, 3);
+    const doses = post.doses.filter(d => d.t <= tTo);
+    const rows = U.map(u => { const p = individual(post.model, post.scen.cov, u, post.scen.form); return ts.map(t => conc(p, doses, t)[0]); });
+    return ts.map((t, j) => {
+      const col = rows.map(r => r[j]);
+      return { t, med: quantile(col, 0.5), lo: quantile(col, 0.05), hi: quantile(col, 0.95) };
+    });
+  }
+
+  // Ensemble: fit each prior, weight by prior weight x evidence; draws are pooled in proportion.
+  function fitEnsemble(scen, withLevel = true) {
+    const usable = Object.values(MODELS).filter(m => !m.applies || m.applies(scen.cov));
+    const members = usable.map(m => withLevel ? fit(m, scen) : priorOnly(m, scen));
+    const logw = members.map(p => Math.log(p.model.weight) + (withLevel ? p.logEvidence : 0));
+    const mx = Math.max(...logw), w = logw.map(v => Math.exp(v - mx)), tot = w.reduce((a, b) => a + b, 0);
+    return { members, weights: w.map(v => v / tot), scen, ensemble: true };
+  }
+  function split(n, weights) {
+    const k = weights.map(w => Math.floor(w * n));
+    k[weights.indexOf(Math.max(...weights))] += n - k.reduce((a, b) => a + b, 0);
+    return k;
+  }
+  function ensLi12(ens, regimen, n = 800) {
+    const k = split(n, ens.weights);
+    const vals = [];
+    ens.members.forEach((m, i) => { if (k[i] > 0) vals.push(...li12(m, regimen, k[i]).vals); });
+    return summary(vals);
+  }
+  function ensRecommend(ens, opts) {
+    // pool unit contributions across members
+    const k = split(800, ens.weights);
+    const pooled = [];
+    ens.members.forEach((m, i) => { if (k[i] > 0) pooled.push({ m, n: k[i] }); });
+    const template = opts.template || [21];
+    const clock = (Math.max(...template) + 12) % 24;
+    const unit = template.map(() => []);
+    let hl = [];
+    pooled.forEach(({ m, n }, idx) => {
+      const U = draws(m, n, 11 + idx);
+      template.forEach((c, j) => U.forEach(u => unit[j].push(steady(individual(m.model, m.scen.cov, u, m.scen.form), [{ clock: c, mmol: MMOL_PER_MG }], clock))));
+      hl.push(...U.slice(0, 150).map(u => halfLife(individual(m.model, m.scen.cov, u, m.scen.form))));
+    });
+    const N = unit[0].length, target = opts.target || [0.6, 0.8], step = opts.step || 250, maxMg = opts.maxMg || 2000;
+    const high = opts.high ?? (target[1] + 0.2);   // safety ceiling follows the target, as in lithos/dosing.py
+    const options = [];
+    for (let kk = 1; kk * step <= maxMg; kk++) {
+      let splitMg;
+      if (template.length === 1) splitMg = [kk * step];
+      else {
+        const base = Math.floor(kk / template.length), rem = kk % template.length;
+        if (base === 0) continue;
+        splitMg = template.map(() => base * step);
+        for (let r = 0; r < rem; r++) splitMg[splitMg.length - 1 - r] += step;
+      }
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(splitMg.reduce((s, mg, j) => s + mg * unit[j][i], 0));
+      const sm = summary(vals);
+      sm.pIn = vals.filter(v => v >= target[0] && v <= target[1]).length / N;
+      sm.pHigh = vals.filter(v => v > high).length / N;
+      sm.daily = splitMg.reduce((a, b) => a + b, 0);
+      sm.split = splitMg;
+      options.push(sm);
+    }
+    const center = (target[0] + target[1]) / 2;
+    const safe = options.filter(o => o.pHigh <= 0.05);
+    const pool = (safe.length ? safe : options).slice();
+    pool.sort((a, b) => (Math.round(b.pIn * 100) - Math.round(a.pIn * 100)) || (Math.abs(a.median - center) - Math.abs(b.median - center)));
+    return { best: pool[0], options, halfLifeH: quantile(hl, 0.5), high };
+  }
+  function ensCurve(ens, tFrom, tTo, npts = 140) {
+    const k = split(240, ens.weights);
+    const ts = [...Array(npts)].map((_, i) => tFrom + (tTo - tFrom) * i / (npts - 1));
+    const rows = [];
+    ens.members.forEach((m, i) => {
+      if (!k[i]) return;
+      const doses = m.doses.filter(d => d.t <= tTo);
+      draws(m, k[i], 3 + i).forEach(u => {
+        const p = individual(m.model, m.scen.cov, u, m.scen.form);
+        rows.push(ts.map(t => conc(p, doses, t)[0]));
+      });
+    });
+    return ts.map((t, j) => {
+      const col = rows.map(r => r[j]);
+      return { t, med: quantile(col, 0.5), lo: quantile(col, 0.05), hi: quantile(col, 0.95) };
+    });
+  }
+
+  return { crclCG, egfr2021, ffm, conc, steady, fit, priorOnly, li12, recommend, curve, halfLife, individual,
+           MMOL_PER_MG, MODELS, fitEnsemble, ensLi12, ensRecommend, ensCurve, buildDoses };
+})();
+
+
+
+</script>
+<script>
+window.SIM = {"intro": "500 virtual adults (a fifth aged over 65) were generated from a deliberately different model than the engine uses. They miss doses, have blood drawn at realistic times and have noisy assays. Usual care reads each level at face value as a 12-hour level. Both arms stop by the same rule, and the results come from a population held out while the engine was developed.", "cards": [{"kind": "bars", "title": "Starting lithium: blood tests until a stable dose is confirmed", "sub": "Mean tests over an 8-week titration to 0.6–0.8 mmol/L; hover for median and IQR.", "rows": [{"title": null, "bars": [{"label": "Usual care, stepwise", "v": 5.591182364729459, "emph": false, "note": "median 6 (IQR 4-7)"}, {"label": "Usual care, proportional", "v": 5.498997995991984, "emph": false, "note": "median 6 (IQR 4-7)"}, {"label": "Model-informed", "v": 4.577154308617234, "emph": true, "note": "median 4 (IQR 3-5)"}]}], "labelW": 170, "table": {"headers": ["Arm", "Mean tests", "Median (IQR)", "Confirmed stable", "Days to confirmed (median)"], "rows": [["Usual care, stepwise", "5.6", "6 (4-7)", "59%", "30"], ["Usual care, proportional", "5.5", "6 (4-7)", "62%", "30"], ["Model-informed", "4.6", "4 (3-5)", "92%", "24"]]}}, {"kind": "bars", "pctFmt": true, "max": 100, "title": "Starting lithium: where the final dose really landed", "sub": "Judged against each virtual patient's true 12-hour level, which no arm can see.", "rows": [{"title": "Final dose truly in 0.6–0.8", "bars": [{"label": "Usual care, stepwise", "v": 57.51503006012024, "emph": false}, {"label": "Usual care, proportional", "v": 58.116232464929865, "emph": false}, {"label": "Model-informed", "v": 70.74148296593187, "emph": true}]}, {"title": "Final dose truly in 0.5–0.9", "bars": [{"label": "Usual care, stepwise", "v": 83.96793587174348, "emph": false}, {"label": "Usual care, proportional", "v": 85.37074148296593, "emph": false}, {"label": "Model-informed", "v": 92.98597194388778, "emph": true}]}, {"title": "Ever on a dose with a true level above 1.0", "bars": [{"label": "Usual care, stepwise", "v": 21.442885771543086, "emph": false}, {"label": "Usual care, proportional", "v": 23.647294589178355, "emph": false}, {"label": "Model-informed", "v": 7.214428857715431, "emph": true}]}], "labelW": 170, "table": {"headers": ["Arm", "Truly 0.6–0.8", "Truly 0.5–0.9", "Ever > 1.0"], "rows": [["Usual care, stepwise", "58%", "84%", "21%"], ["Usual care, proportional", "58%", "85%", "24%"], ["Model-informed", "71%", "93%", "7%"]]}}, {"kind": "bars", "pctFmt": true, "max": 100, "title": "Where lithium is most feared: older adults and weaker kidneys", "sub": "Share whose final dose was truly in 0.6–0.8, and share ever on a dose truly above 1.0. Tests were similar.", "rows": [{"title": "Aged 65+ (n = 120): final dose in range", "bars": [{"label": "Usual care, stepwise", "v": 56.666666666666664}, {"label": "Model-informed", "v": 65.0, "emph": true}]}, {"title": "eGFR below 60 (n = 63): final dose in range", "bars": [{"label": "Usual care, stepwise", "v": 49.2063492063492}, {"label": "Model-informed", "v": 68.25396825396825, "emph": true}]}, {"title": "Aged 65+: ever above 1.0", "bars": [{"label": "Usual care, stepwise", "v": 29.166666666666668}, {"label": "Model-informed", "v": 4.166666666666666, "emph": true}]}, {"title": "eGFR below 60: ever above 1.0", "bars": [{"label": "Usual care, stepwise", "v": 38.095238095238095}, {"label": "Model-informed", "v": 6.349206349206349, "emph": true}]}], "labelW": 170, "table": {"headers": ["Group", "Arm", "Tests (mean)", "Final dose truly 0.6–0.8", "Ever > 1.0"], "rows": [["Aged 65+", "Usual care, stepwise", "5.6", "57%", "29%"], ["Aged 65+", "Usual care, proportional", "5.5", "56%", "28%"], ["Aged 65+", "Model-informed", "5.3", "65%", "4%"], ["eGFR below 60", "Usual care, stepwise", "5.4", "49%", "38%"], ["eGFR below 60", "Usual care, proportional", "5.4", "51%", "35%"], ["eGFR below 60", "Model-informed", "5.6", "68%", "6%"]]}}, {"kind": "line", "title": "A level drawn at a convenient time", "sub": "Median error against what a correctly timed 12-hour level would have shown, by hours after the evening dose. At 10–14 h the measured value is already right, and the report keeps it first.", "series": [{"short": "As measured", "emph": false, "pts": [[4.0, 0.38317919373962106], [8.0, 0.11240390586921911], [12.0, 0.032168982796118614], [16.0, 0.06914613228511035], [20.0, 0.13260307043872688]]}, {"short": "Engine", "emph": true, "pts": [[4.0, 0.11503694814209184], [8.0, 0.037825629917558], [12.0, 0.0387400813530408], [16.0, 0.042402341920363185], [20.0, 0.03789665845950929]]}], "xticks": [4.0, 8.0, 12.0, 16.0, 20.0], "xunit": "h", "xlabel": "hours after the evening dose", "band": [11, 13], "table": {"headers": ["Hours", "n", "As measured", "Engine", "Wrong category (as measured)", "Wrong category (engine)", "90% interval coverage"], "rows": [["4", "92", "0.383", "0.115", "53%", "38%", "80%"], ["8", "119", "0.112", "0.038", "28%", "10%", "97%"], ["12", "94", "0.032", "0.039", "11%", "13%", "98%"], ["16", "93", "0.069", "0.042", "22%", "14%", "96%"], ["20", "101", "0.133", "0.038", "42%", "12%", "92%"]]}}, {"kind": "bars", "pctFmt": true, "max": 100, "title": "A thiazide is started in a stable patient", "sub": "True 12-hour level afterwards: no lithium change vs the engine's pre-emptive adjustment. A check level 5–7 days later is still needed.", "rows": [{"title": "Above 1.0 mmol/L", "bars": [{"label": "No change", "v": 53.50701402805611}, {"label": "Engine-adjusted", "v": 9.01803607214429, "emph": true}]}, {"title": "Above 1.2 mmol/L", "bars": [{"label": "No change", "v": 31.462925851703403}, {"label": "Engine-adjusted", "v": 2.6052104208416833, "emph": true}]}, {"title": "Within 0.5–0.9 mmol/L", "bars": [{"label": "No change", "v": 32.26452905811623}, {"label": "Engine-adjusted", "v": 72.74549098196393, "emph": true}]}, {"title": "Below 0.5 mmol/L (the price)", "bars": [{"label": "No change", "v": 1.6032064128256511}, {"label": "Engine-adjusted", "v": 11.022044088176353, "emph": true}]}], "labelW": 130, "table": {"headers": ["Outcome", "No change", "Engine-adjusted"], "rows": [["> 1.0", "54%", "9%"], ["> 1.2", "31%", "3%"], ["0.5–0.9", "32%", "73%"], ["0.6–0.8", "14%", "37%"], ["< 0.5", "2%", "11%"]]}}, {"kind": "line", "title": "How soon after a dose change is a level useful?", "sub": "Median error in the new steady-state 12-hour level, by day of sampling, with one earlier level on record. From day 4 the measured value is as good or better.", "series": [{"short": "As measured", "emph": false, "pts": [[1, 0.12775818455352578], [2, 0.08007683233468099], [3, 0.05385141741650268], [4, 0.04469828611615301], [5, 0.039703789216644525], [7, 0.041988104637091905]]}, {"short": "Engine", "emph": true, "pts": [[1, 0.046471420127601415], [2, 0.045765228011456216], [3, 0.04606573116498536], [4, 0.0465266148318344], [5, 0.04686965937565701], [7, 0.05544440688641872]]}], "xticks": [1, 2, 3, 4, 5, 7], "xunit": "day", "xlabel": "day of sampling after the change", "table": {"headers": ["Day", "As measured", "Engine, no history", "Engine + earlier level"], "rows": [["1", "0.128", "0.055", "0.046"], ["2", "0.080", "0.053", "0.046"], ["3", "0.054", "0.050", "0.046"], ["4", "0.045", "0.045", "0.047"], ["5", "0.040", "0.050", "0.047"], ["7", "0.042", "0.050", "0.055"]]}}]};
+</script>
+<script>
+"use strict";
+(() => {
+  const E = LithosEngine;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : "–");
+  const pct = (p) => `${Math.round(p * 100)}%`;
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const clockStr = (h) => {
+    const hh = ((Math.floor(h) % 24) + 24) % 24, mm = Math.round((h - Math.floor(h)) * 60) % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+
+  // ---------------------------------------------------------------- presets
+  const PRESETS = [
+    { id: "afternoon", label: "Afternoon blood test",
+      v: { age: 45, sex: "F", wt: 70, ht: 165, scr: 75, regimen: "nocte", dose: 750, days: 30, target: "0.6-0.8", lastDose: "evening", hrs: 18.5, level: 0.55 } },
+    { id: "morningdose", label: "Morning dose taken before the test",
+      v: { age: 58, sex: "F", wt: 72, ht: 163, scr: 82, regimen: "bd", dose: 1000, days: 40, target: "0.6-0.8", lastDose: "morning", hrs: 2, level: 1.24 } },
+    { id: "newdose", label: "Four days after starting",
+      v: { age: 34, sex: "M", wt: 86, ht: 181, scr: 88, regimen: "nocte", dose: 1000, days: 4, target: "0.6-0.8", lastDose: "evening", hrs: 19.5, level: 0.60 } },
+    { id: "older", label: "Older adult, eGFR in the 50s",
+      v: { age: 72, sex: "M", wt: 80, ht: 175, scr: 118, regimen: "nocte", dose: 750, days: 60, target: "0.4-0.6", lastDose: "evening", hrs: 12, level: 0.78 } },
+  ];
+
+  const doseSel = $("dose");
+  for (let mg = 250; mg <= 2000; mg += 250) {
+    const o = document.createElement("option");
+    o.value = mg; o.textContent = `${mg} mg`;
+    doseSel.appendChild(o);
+  }
+
+  function readInputs() {
+    return {
+      age: +$("age").value, sex: $("sex").value, wt: +$("wt").value, ht: +$("ht").value, scr: +$("scr").value,
+      regimen: $("regimen").value, dose: +$("dose").value, days: Math.max(1, Math.round(+$("days").value || 1)),
+      target: $("target").value.split("-").map(Number), lastDose: $("lastDose").value,
+      hrs: +$("hrs").value, level: +$("level").value,
+    };
+  }
+  function setInputs(v) {
+    for (const k of ["age", "sex", "wt", "ht", "scr", "regimen", "dose", "days", "target", "lastDose", "hrs", "level"]) {
+      if (v[k] !== undefined) $(k).value = v[k];
+    }
+    syncRegimen();
+  }
+  function syncRegimen() {
+    const bd = $("regimen").value === "bd";
+    $("lastDoseField").hidden = !bd;
+    const hrs = $("hrs");
+    hrs.max = bd ? 12 : 24;
+    if (+hrs.value > +hrs.max) hrs.value = hrs.max;
+  }
+
+  function regimenOf(inp) {
+    if (inp.regimen === "nocte") return [{ clock: 21, mg: inp.dose }];
+    const k = inp.dose / 250, base = Math.floor(k / 2), rem = k % 2;
+    const m = base * 250, e = base * 250 + rem * 250;
+    return m > 0 ? [{ clock: 8, mg: m }, { clock: 20, mg: e }] : [{ clock: 20, mg: e }];
+  }
+  function lastClockOf(inp, regimen) {
+    if (inp.regimen === "nocte") return 21;
+    return inp.lastDose === "morning" && regimen.length === 2 ? 8 : 20;
+  }
+
+  // -------------------------------------------------------------- the engine
+  function evaluate(inp) {
+    const regimen = regimenOf(inp);
+    const lastClock = lastClockOf(inp, regimen);
+    const scen = {
+      cov: { age: inp.age, sex: inp.sex, wt: inp.wt, ht: inp.ht, scr: inp.scr },
+      form: "IR", regimen, days: inp.days, lastClock,
+      level: { hoursAfterLast: inp.hrs, value: inp.level, timingSd: 0.25 },
+    };
+    const ens = E.fitEnsemble(scen, true);
+    const std = E.ensLi12(ens, regimen);
+    const template = regimen.map(r => r.clock);
+    const R = E.ensRecommend(ens, { target: inp.target, template });
+    const lo = inp.target[0], hi = inp.target[1];
+    const current = R.options.find(o => o.daily === inp.dose) || null;
+
+    // choose: best by P(in range) under the safety ceiling, within a 1.5x step of the current dose
+    // (one 250 mg tablet up or down is always allowed, as in lithos/dosing.py)
+    const safe = R.options.filter(o => o.pHigh <= 0.05);
+    const up = Math.max(inp.dose * 1.5, inp.dose + 250), down = Math.min(inp.dose / 1.5, inp.dose - 250);
+    const inStep = safe.filter(o => o.daily <= up && o.daily >= down && Math.abs(o.daily - inp.dose) <= 500);
+    const pool = (inStep.length ? inStep : safe.length ? safe : R.options).slice();
+    const center = (lo + hi) / 2;
+    pool.sort((a, b) => (Math.round(b.pIn * 100) - Math.round(a.pIn * 100)) || (Math.abs(a.median - center) - Math.abs(b.median - center)));
+    let chosen = pool[0];
+    let action = chosen.daily === inp.dose ? "keep" : (chosen.daily > inp.dose ? "increase" : "decrease");
+    if (current && current.pHigh <= 0.05 && current.pIn >= chosen.pIn - 0.10 && current.median >= lo && current.median <= hi) {
+      chosen = current; action = "keep";
+    }
+    // know when not to answer
+    if (current && chosen !== current) {
+      const vague = (current.hi - current.lo) > 0.35;
+      const plausible = current.median >= lo - 0.1 && current.median <= hi + 0.1;
+      const pOver12 = current.vals.filter(v => v > 1.2).length / current.vals.length;
+      if (vague && plausible && pOver12 < 0.10) { chosen = current; action = "repeat"; }
+    }
+    const egfr = E.egfr2021(inp.scr, inp.age, inp.sex);
+    return { inp, scen, ens, std, R, chosen, current, action, egfr, regimen, lastClock };
+  }
+
+  function status(median, lo, hi) {
+    if (median < lo) return { cls: "warn", text: `Below target (${lo}–${hi})` };
+    if (median > 1.0) return { cls: "crit", text: `Above ${hi}, over the usual ceiling of 1.0` };
+    if (median > hi) return { cls: "warn", text: `Above target (${lo}–${hi})` };
+    return { cls: "good", text: `In target (${lo}–${hi})` };
+  }
+  function naive(level, lo, hi) {
+    if (level > hi) return `${fmt(level)}: looks above target, so "reduce the dose"`;
+    if (level < lo) return `${fmt(level)}: looks below target, so "increase the dose"`;
+    return `${fmt(level)}: looks in range, so "no change"`;
+  }
+  function doseText(split, regimen) {
+    const clocks = regimen.length === 2 ? ["08:00", "20:00"] : ["21:00"];
+    return split.map((mg, i) => `${mg} mg (${mg / 250} × 250 mg) at ${clocks[regimen.length === 2 ? i : 0]}`).join(" + ");
+  }
+
+  // --------------------------------------------------------------- rendering
+  function renderVerdict(res) {
+    const { inp, std } = res;
+    const [lo, hi] = inp.target;
+    $("stdVal").innerHTML = `${fmt(std.median)}<small>mmol/L</small>`;
+    const st = status(std.median, lo, hi);
+    const pIn = std.vals.filter(v => v >= lo && v <= hi).length / std.vals.length;
+    $("stdStatus").innerHTML = `<span class="pill ${st.cls}">${st.text}</span>`;
+    $("rawRead").textContent = naive(inp.level, lo, hi);
+    $("engRead").textContent = `12-hour equivalent ${fmt(std.median)} (90% interval ${fmt(std.lo)}–${fmt(std.hi)}); ${pct(pIn)} probability in range`;
+    const flags = [];
+    if (inp.hrs < 6) flags.push("Drawn in the absorption and distribution phase: informative only with an accurate dose time, so the interval is wide.");
+    else if (inp.hrs > 16 && inp.regimen === "nocte") flags.push("Drawn late in the dosing interval: a face-value reading underestimates the 12-hour level.");
+    const t12 = res.R.halfLifeH;
+    if (inp.days * 24 < 3.3 * t12) flags.push(`Not yet at steady state (${inp.days} day${inp.days > 1 ? "s" : ""} on this dose, half-life about ${Math.round(t12)} h): the engine projects the steady-state level.`);
+    if (inp.age >= 65 && lo >= 0.6) flags.push("Age 65+: ISBD/IGSLi suggest 0.4–0.6 for most older adults.");
+    if (res.egfr < 30) flags.push("eGFR below 30: US labelling does not recommend lithium.");
+    if (std.median > 1.2 || inp.level >= 1.5) flags.push("Check for toxicity symptoms now; symptoms override the number.");
+    $("flags").innerHTML = flags.map(f => `<li>${f}</li>`).join("");
+  }
+
+  function renderRec(res) {
+    const { chosen, action, R, inp, regimen, current } = res;
+    const heads = {
+      keep: "No change", increase: "Increase the dose", decrease: "Decrease the dose",
+      repeat: "Repeat the level before changing anything",
+    };
+    $("recHead").textContent = heads[action];
+    $("recDose").textContent = doseText(chosen.split, regimen);
+    $("recStats").innerHTML = `<span>Forecast 12-h level <b>${fmt(chosen.median)}</b> (${fmt(chosen.lo)}–${fmt(chosen.hi)})</span>` +
+      `<span>P(in range) <b>${pct(chosen.pIn)}</b></span><span>P(&gt; ${R.high.toFixed(1)}) <b>${pct(chosen.pHigh)}</b></span>`;
+    const hl = R.halfLifeH;
+    const recheck = Math.max(3, Math.ceil(2.5 * hl / 24)), conv = Math.max(5, Math.ceil(5 * hl / 24));
+    let next;
+    if (action === "repeat") next = `The evidence is too uncertain to justify a change (90% interval ${fmt(current.lo)}–${fmt(current.hi)}). Repeat a level tomorrow morning, at least 10 h after the evening dose and before any morning dose, recording both times.`;
+    else if (action === "keep") next = inp.days < 14 ? "Confirm with another level in about a week (weekly until stable)." : "Next level per the routine schedule; sooner if anything changes.";
+    else next = `Next level in ${recheck} days, any time at least 6 h after a dose, with the dose time recorded. Waiting for steady state would take about ${conv} days.`;
+    $("recNext").textContent = next;
+    const w = res.ens.weights, names = res.ens.members.map(m => m.model.name);
+    $("modelLine").textContent = `Priors weighted by fit: ${names.map((n, i) => `${n} ${pct(w[i])}`).join(" · ")}. Estimated half-life ${Math.round(hl)} h. eGFR ${Math.round(res.egfr)}.`;
+  }
+
+  // gauge
+  const BANDS = [
+    { a: 0.0, b: 0.4, v: "--band-sub", label: "low" },
+    { a: 0.4, b: 0.6, v: "--band-low", label: "0.4–0.6" },
+    { a: 0.6, b: 0.8, v: "--band-target", label: "0.6–0.8" },
+    { a: 0.8, b: 1.0, v: "--band-high", label: "0.8–1.0" },
+    { a: 1.0, b: 1.5, v: "--band-above", label: "above usual" },
+    { a: 1.5, b: 1.8, v: "--band-toxic", label: "toxic" },
+  ];
+  function renderGauge(res) {
+    const box = $("gauge");
+    box.innerHTML = "";
+    const W = Math.max(280, box.clientWidth), H = 96, padL = 8, padR = 8;
+    const x = (v) => padL + (Math.min(v, 1.8) / 1.8) * (W - padL - padR);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
+      "aria-label": `Standardised 12-hour level ${fmt(res.std.median)} with 90% interval ${fmt(res.std.lo)} to ${fmt(res.std.hi)}; measured ${fmt(res.inp.level)}` }, box);
+    const y0 = 30, bh = 22;
+    for (const b of BANDS) {
+      el("rect", { x: x(b.a), y: y0, width: Math.max(0, x(b.b) - x(b.a) - 2), height: bh, fill: css(b.v), rx: 3 }, svg);
+      const wpx = x(b.b) - x(b.a);
+      if (wpx > b.label.length * 6.2 + 6) {
+        const t = el("text", { x: (x(b.a) + x(b.b)) / 2, y: y0 + bh / 2 + 4, "text-anchor": "middle", fill: css("--ink-2"),
+          "font-size": 10.5, "font-family": "IBM Plex Mono, monospace" }, svg);
+        t.textContent = b.label;
+      }
+    }
+    // target outline
+    const [lo, hi] = res.inp.target;
+    el("rect", { x: x(lo), y: y0 - 3, width: x(hi) - x(lo) - 2, height: bh + 6, fill: "none", stroke: css("--ink"), "stroke-width": 1.2, rx: 4 }, svg);
+    // interval + median
+    const s = res.std;
+    el("rect", { x: x(s.lo), y: y0 + bh + 10, width: Math.max(2, x(s.hi) - x(s.lo)), height: 6, rx: 3, fill: css("--series-engine"), opacity: 0.35 }, svg);
+    el("line", { x1: x(s.median), x2: x(s.median), y1: y0 - 8, y2: y0 + bh + 18, stroke: css("--series-engine"), "stroke-width": 3, "stroke-linecap": "round" }, svg);
+    const tm = el("text", { x: Math.min(W - 60, Math.max(4, x(s.median) - 30)), y: 14, fill: css("--accent-ink"), "font-size": 11.5, "font-family": "IBM Plex Mono, monospace", "font-weight": 500 }, svg);
+    tm.textContent = `12-h ${fmt(s.median)}`;
+    // measured
+    const mx = x(res.inp.level);
+    el("circle", { cx: mx, cy: y0 + bh + 13, r: 5, fill: css("--surface"), stroke: css("--ink"), "stroke-width": 1.6 }, svg);
+    const tr = el("text", { x: Math.min(W - 80, Math.max(4, mx - 30)), y: H - 4, fill: css("--ink-2"), "font-size": 10.5, "font-family": "IBM Plex Mono, monospace" }, svg);
+    tr.textContent = `measured ${fmt(res.inp.level)}`;
+  }
+
+  // curve
+  function renderCurve(res) {
+    const box = $("curve");
+    box.innerHTML = "";
+    const W = Math.max(280, box.clientWidth), H = 230, m = { l: 40, r: 12, t: 12, b: 30 };
+    const members = res.ens.members;
+    const tObs = members[0].tObs;
+    const tFrom = Math.max(0, tObs - 60), tTo = tObs + 10;
+    const pts = E.ensCurve(res.ens, tFrom, tTo, Math.min(160, Math.round(W / 3)));
+    const yMax = Math.max(1.2, res.inp.level * 1.15, ...pts.map(p => p.hi)) * 1.05;
+    const x = (t) => m.l + (t - tFrom) / (tTo - tFrom) * (W - m.l - m.r);
+    const y = (c) => H - m.b - (c / yMax) * (H - m.t - m.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
+      "aria-label": "Estimated lithium concentration over the last three days with 90% band and the measured level" }, box);
+    // grid + y ticks
+    for (let v = 0; v <= yMax; v += 0.2) {
+      const yy = y(v);
+      el("line", { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: css("--line"), "stroke-width": 1 }, svg);
+      const t = el("text", { x: m.l - 6, y: yy + 3, "text-anchor": "end", fill: css("--muted"), "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, svg);
+      t.textContent = v.toFixed(1);
+    }
+    // target band
+    const [lo, hi] = res.inp.target;
+    el("rect", { x: m.l, y: y(hi), width: W - m.l - m.r, height: y(lo) - y(hi), fill: css("--band-target"), opacity: 0.8 }, svg);
+    // band + median
+    const area = pts.map((p, i) => `${i ? "L" : "M"}${x(p.t)},${y(p.hi)}`).join("") +
+      pts.slice().reverse().map(p => `L${x(p.t)},${y(p.lo)}`).join("") + "Z";
+    el("path", { d: area, fill: css("--series-engine"), opacity: 0.16 }, svg);
+    el("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${x(p.t)},${y(p.med)}`).join(""), fill: "none",
+      stroke: css("--series-engine"), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    // x ticks at midnights and doses
+    for (let t = Math.ceil(tFrom / 24) * 24; t <= tTo; t += 24) {
+      el("line", { x1: x(t), x2: x(t), y1: m.t, y2: H - m.b, stroke: css("--line"), "stroke-width": 1 }, svg);
+    }
+    for (let t = Math.ceil(tFrom / 6) * 6; t <= tTo; t += 6) {
+      const tx = el("text", { x: x(t), y: H - m.b + 14, "text-anchor": "middle", fill: css("--muted"), "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, svg);
+      tx.textContent = clockStr(t);
+    }
+    for (const d of members[0].doses) {
+      if (d.t < tFrom || d.t > tTo) continue;
+      el("path", { d: `M${x(d.t)},${H - m.b} l-4,7 h8 z`, fill: css("--ink-2") }, svg);
+    }
+    // 12-h standard time after the last evening dose before the sample
+    const eveClock = Math.max(...res.regimen.map(r => r.clock));
+    const lastEve = Math.floor((tObs - eveClock) / 24) * 24 + eveClock;
+    const t12 = lastEve + 12;
+    if (t12 >= tFrom && t12 <= tTo) {
+      el("line", { x1: x(t12), x2: x(t12), y1: m.t, y2: H - m.b, stroke: css("--accent-ink"), "stroke-width": 1.2 }, svg);
+      const lab = el("text", { x: x(t12) + 4, y: m.t + 10, fill: css("--accent-ink"), "font-size": 10.5, "font-family": "IBM Plex Mono, monospace" }, svg);
+      lab.textContent = "12 h";
+    }
+    // measured point
+    el("circle", { cx: x(tObs), cy: y(res.inp.level), r: 5.5, fill: css("--ink"), stroke: css("--surface"), "stroke-width": 2 }, svg);
+    // hover
+    const tip = document.createElement("div");
+    tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+    const cross = el("line", { y1: m.t, y2: H - m.b, stroke: css("--muted"), "stroke-width": 1, visibility: "hidden" }, svg);
+    const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+    const move = (ev) => {
+      const r = svg.getBoundingClientRect();
+      const px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+      const t = tFrom + (px - m.l) / (W - m.l - m.r) * (tTo - tFrom);
+      let best = pts[0];
+      for (const p of pts) if (Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;
+      cross.setAttribute("x1", x(best.t)); cross.setAttribute("x2", x(best.t)); cross.setAttribute("visibility", "visible");
+      tip.hidden = false;
+      tip.textContent = `${clockStr(best.t)}  ${fmt(best.med)} (${fmt(best.lo)}–${fmt(best.hi)}) mmol/L`;
+      const left = Math.min(W - 190, Math.max(0, x(best.t) + 10));
+      tip.style.left = `${left}px`; tip.style.top = `${m.t}px`;
+    };
+    hit.addEventListener("mousemove", move);
+    hit.addEventListener("touchmove", move, { passive: true });
+    hit.addEventListener("mouseleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+  }
+
+  // hero slip (fixed example = first preset)
+  function renderHero() {
+    const v = PRESETS[0].v;
+    const res = evaluate({ ...v, target: v.target.split("-").map(Number) });
+    const s = res.std, st = status(s.median, 0.6, 0.8);
+    const drawn = clockStr(21 + v.hrs);
+    $("heroSlip").innerHTML = `
+      <div class="slip-head"><span>Chemical pathology</span><span>Specimen: serum</span></div>
+      <div class="slip-body">
+        <div class="slip-row"><span class="k">Regimen</span><span class="v">${v.dose} mg lithium carbonate at 21:00</span></div>
+        <div class="slip-row"><span class="k">Collected</span><span class="v">${drawn}, ${fmt(v.hrs, 1)} h after dose</span></div>
+        <div class="slip-row raw"><span class="k">Lithium (as measured)</span><span class="v">${fmt(v.level)} mmol/L</span></div>
+        <div class="slip-std">
+          <span class="k">Standardised 12-hour level</span>
+          <span class="big">${fmt(s.median)} <span style="font-size:1rem;font-family:var(--font-body);font-weight:400;color:var(--ink-2)">mmol/L</span></span>
+          <span class="ci">90% interval ${fmt(s.lo)}–${fmt(s.hi)}</span>
+          <span class="pill ${st.cls}">${st.text}</span>
+        </div>
+        <p class="slip-note">Read at face value, ${fmt(v.level)} would suggest a dose increase. Model: ensemble of two population priors weighted by fit (${res.ens.members.map((mm, i) => `${Math.round(res.ens.weights[i] * 100)}%`).join(" / ")}). Research prototype, not for clinical use.</p>
+      </div>`;
+  }
+
+  // ------------------------------------------------------------ interaction
+  let timer = null, lastRes = null;
+  function update() {
+    const inp = readInputs();
+    $("hrsOut").textContent = `${fmt(inp.hrs, 1)} h`;
+    const regimen = regimenOf(inp);
+    const lc = lastClockOf(inp, regimen);
+    $("clockOut").textContent = `Blood drawn at ${clockStr(lc + inp.hrs)} (last dose at ${clockStr(lc)})`;
+    const e = E.egfr2021(inp.scr, inp.age, inp.sex);
+    $("renalDerived").textContent = `eGFR ${Math.round(e)} mL/min/1.73m² · CrCl ${Math.round(E.crclCG(inp.scr, inp.age, inp.sex, inp.wt))} mL/min`;
+    if (!(inp.level > 0) || !(inp.age >= 18) || !(inp.wt > 30) || !(inp.scr > 20)) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      lastRes = evaluate(inp);
+      renderVerdict(lastRes); renderRec(lastRes); renderGauge(lastRes); renderCurve(lastRes);
+    }, 90);
+  }
+  const presetBox = $("presets");
+  for (const p of PRESETS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "preset"; b.textContent = p.label; b.dataset.id = p.id;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      for (const o of presetBox.children) o.setAttribute("aria-pressed", String(o === b));
+      setInputs(p.v); update();
+    });
+    presetBox.appendChild(b);
+  }
+  $("inputs").addEventListener("input", (ev) => {
+    if (ev.target.id === "regimen") syncRegimen();
+    for (const o of presetBox.children) o.setAttribute("aria-pressed", "false");
+    update();
+  });
+  $("inputs").addEventListener("submit", (ev) => ev.preventDefault());
+  const ro = new ResizeObserver(() => { if (lastRes) { renderGauge(lastRes); renderCurve(lastRes); } drawSim(); });
+  ro.observe($("curve"));
+
+  // ------------------------------------------------------------ simulations
+  function barChart(box, rows, opts) {
+    box.innerHTML = "";
+    const W = Math.max(260, box.clientWidth), rowH = 26, gap = 10, m = { l: opts.labelW || 150, r: 54, t: 6, b: 6 };
+    let H = m.t + m.b;
+    const groups = rows.map(g => ({ ...g, h: g.bars.length * rowH + gap }));
+    H += groups.reduce((a, g) => a + g.h + (g.title ? 18 : 0), 0);
+    const max = opts.max || Math.max(...rows.flatMap(g => g.bars.map(b => b.v))) * 1.1;
+    const x = (v) => m.l + (v / max) * (W - m.l - m.r);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": opts.aria }, box);
+    const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+    let yy = m.t;
+    for (const g of groups) {
+      if (g.title) {
+        const t = el("text", { x: 0, y: yy + 12, fill: css("--ink"), "font-size": 12, "font-weight": 700, "font-family": "Atkinson Hyperlegible, system-ui, sans-serif" }, svg);
+        t.textContent = g.title; yy += 18;
+      }
+      for (const b of g.bars) {
+        const lab = el("text", { x: m.l - 8, y: yy + rowH / 2 + 4, "text-anchor": "end", fill: css("--ink-2"), "font-size": 11.5, "font-family": "Atkinson Hyperlegible, system-ui, sans-serif" }, svg);
+        lab.textContent = b.label;
+        const color = b.emph ? css("--series-engine") : css("--series-status");
+        const w = Math.max(2, x(b.v) - m.l);
+        const bh = Math.min(16, rowH - 8);
+        if (w >= 8) {
+          el("path", { d: `M${m.l},${yy + (rowH - bh) / 2} h${w - 4} a4,4 0 0 1 4,4 v${bh - 8} a4,4 0 0 1 -4,4 h-${w - 4} z`, fill: color }, svg);
+        } else {
+          el("rect", { x: m.l, y: yy + (rowH - bh) / 2, width: w, height: bh, fill: color }, svg);
+        }
+        const val = el("text", { x: m.l + w + 6, y: yy + rowH / 2 + 4, fill: css("--ink"), "font-size": 11.5, "font-family": "IBM Plex Mono, monospace" }, svg);
+        val.textContent = opts.fmt(b.v);
+        const hit = el("rect", { x: 0, y: yy, width: W, height: rowH, fill: "transparent" }, svg);
+        hit.addEventListener("mousemove", (ev) => {
+          const r = svg.getBoundingClientRect();
+          tip.hidden = false; tip.textContent = `${b.label}: ${opts.fmt(b.v)}${b.note ? " · " + b.note : ""}`;
+          tip.style.left = `${Math.min(W - 200, ev.clientX - r.left + 12)}px`; tip.style.top = `${yy - 4}px`;
+        });
+        hit.addEventListener("mouseleave", () => { tip.hidden = true; });
+        yy += rowH;
+      }
+      yy += gap;
+    }
+  }
+  function lineChart(box, series, opts) {
+    box.innerHTML = "";
+    const W = Math.max(260, box.clientWidth), H = 200, m = { l: 40, r: 88, t: 10, b: 30 };
+    const xs = series[0].pts.map(p => p[0]);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yMax = Math.max(...series.flatMap(s => s.pts.map(p => p[1]))) * 1.15;
+    const x = (v) => m.l + (v - xMin) / (xMax - xMin) * (W - m.l - m.r);
+    const y = (v) => H - m.b - (v / yMax) * (H - m.t - m.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": opts.aria }, box);
+    const step = yMax > 0.3 ? 0.1 : 0.05;
+    for (let v = 0; v <= yMax + 1e-9; v += step) {
+      el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: css("--line"), "stroke-width": 1 }, svg);
+      const t = el("text", { x: m.l - 6, y: y(v) + 3, "text-anchor": "end", fill: css("--muted"), "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, svg);
+      t.textContent = v.toFixed(2);
+    }
+    for (const xv of opts.xticks) {
+      const t = el("text", { x: x(xv), y: H - m.b + 14, "text-anchor": "middle", fill: css("--muted"), "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, svg);
+      t.textContent = opts.xfmt(xv);
+    }
+    const xl = el("text", { x: (m.l + W - m.r) / 2, y: H - 2, "text-anchor": "middle", fill: css("--muted"), "font-size": 10.5, "font-family": "Atkinson Hyperlegible, system-ui, sans-serif" }, svg);
+    xl.textContent = opts.xlabel;
+    if (opts.band) el("rect", { x: x(opts.band[0]), y: m.t, width: x(opts.band[1]) - x(opts.band[0]), height: H - m.t - m.b, fill: css("--accent-wash") }, svg);
+    for (const s of series) {
+      const color = s.emph ? css("--series-engine") : css("--series-status");
+      el("path", { d: s.pts.map((p, i) => `${i ? "L" : "M"}${x(p[0])},${y(p[1])}`).join(""), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+      for (const p of s.pts) el("circle", { cx: x(p[0]), cy: y(p[1]), r: 4, fill: color, stroke: css("--surface"), "stroke-width": 2 }, svg);
+      const last = s.pts[s.pts.length - 1];
+      const t = el("text", { x: x(last[0]) + 8, y: y(last[1]) + 4, fill: css("--ink-2"), "font-size": 11, "font-family": "Atkinson Hyperlegible, system-ui, sans-serif" }, svg);
+      t.textContent = s.short;
+    }
+    const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+    const cross = el("line", { y1: m.t, y2: H - m.b, stroke: css("--muted"), "stroke-width": 1, visibility: "hidden" }, svg);
+    const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (ev) => {
+      const r = svg.getBoundingClientRect(), px = ev.clientX - r.left;
+      let bi = 0;
+      xs.forEach((xv, i) => { if (Math.abs(x(xv) - px) < Math.abs(x(xs[bi]) - px)) bi = i; });
+      cross.setAttribute("x1", x(xs[bi])); cross.setAttribute("x2", x(xs[bi])); cross.setAttribute("visibility", "visible");
+      tip.hidden = false;
+      tip.textContent = `${opts.xfmt(xs[bi])}: ` + series.map(s => `${s.short} ${s.pts[bi][1].toFixed(3)}`).join(" · ");
+      tip.style.left = `${Math.min(W - 250, Math.max(0, x(xs[bi]) + 10))}px`; tip.style.top = `${m.t}px`;
+    });
+    hit.addEventListener("mouseleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+  }
+  function table(headers, rows) {
+    return `<details><summary>Table view</summary><div class="tbl-wrap"><table><thead><tr>${headers.map((h, i) => `<th class="${i ? "num" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => `<td class="${i ? "num" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
+  }
+
+  let simBuilt = false;
+  function drawSim() {
+    const S = window.SIM;
+    if (!S) return;
+    const grid = $("simGrid");
+    if (!simBuilt) {
+      $("simIntro").textContent = S.intro;
+      grid.innerHTML = S.cards.map((c, i) => `<div class="sim-card"><h3>${c.title}</h3><p class="sub">${c.sub}</p><div class="chart-box" id="sim${i}"></div>${table(c.table.headers, c.table.rows)}</div>`).join("");
+      simBuilt = true;
+    }
+    S.cards.forEach((c, i) => {
+      const box = $(`sim${i}`);
+      if (c.kind === "bars") barChart(box, c.rows, { fmt: (v) => c.pctFmt ? `${Math.round(v)}%` : v.toFixed(1), aria: c.title, labelW: c.labelW, max: c.max });
+      else lineChart(box, c.series, { aria: c.title, xticks: c.xticks, xfmt: (v) => c.xunit === "h" ? `${v} h` : `${v}`, xlabel: c.xlabel, band: c.band });
+    });
+  }
+
+  // boot
+  setInputs(PRESETS[0].v);
+  presetBox.children[0].setAttribute("aria-pressed", "true");
+  renderHero();
+  update();
+  drawSim();
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener?.("change", () => { renderHero(); if (lastRes) { renderGauge(lastRes); renderCurve(lastRes); } drawSim(); });
+  new MutationObserver(() => { if (lastRes) { renderGauge(lastRes); renderCurve(lastRes); } drawSim(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+
+</script>

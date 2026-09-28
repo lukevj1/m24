@@ -89,7 +89,7 @@ The forecast is then compared with the measured value. This mirrors how the tool
 | Previous level × dose ratio | Linear scaling by the change in average daily dose: the usual mental arithmetic |
 
 **Metrics**, overall and by stratum (95% CIs from a patient-level bootstrap):
-- relative bias and relative RMSE;
+- median prediction error (MDPE, bias) and median absolute prediction error (MDAPE, imprecision): the metrics of the published external evaluations [E39]. Medians are used because a few very low levels, for example after a dose missed the night before the test, make means of relative errors meaningless;
 - mean absolute error;
 - share within ±20% and within ±0.1 mmol/L;
 - coverage of the model's 90% prediction interval;
@@ -142,7 +142,30 @@ All thresholds are command-line options. The converter prints only aggregate cou
 
 ### Demonstration on synthetic data (not validation)
 
-<!-- SYNTHETIC-RESULTS -->
+`python -m validation.synthetic` makes 100 virtual outpatients followed for a year. Each is titrated the usual way, then has three-monthly levels. The dataset records only what a clinic would:
+- the prescribed regimen (patients miss 3–15% of doses, sometimes the night before a test);
+- noisy levels, with approximate times for 30% of samples;
+- creatinine.
+
+Some patients start a thiazide that is never recorded. The patients come from the same deliberately different "truth" model as the simulations. The run (700 forecast levels) shows what the report looks like and how the comparators behave:
+
+| Method | Bias (MDPE) | Imprecision (MDAPE) | Mean abs. error, mmol/L (95% CI) | Within ±20% | 90% PI coverage |
+|---|---|---|---|---|---|
+| Engine, Bayesian forecast from earlier levels | −1.0% | 15.2% | 0.124 (0.115–0.135) | 63% | 77% |
+| Engine's population prior only | +29.1% | 41.4% | 0.310 (0.273–0.349) | 28% | 66% |
+| Previous level, unchanged | −14.3% | 28.6% | 0.204 (0.189–0.219) | 37% | – |
+| Previous level × change in daily dose | −2.2% | 17.3% | 0.150 (0.136–0.163) | 55% | – |
+
+**What this shows about the harness:**
+- **It separates the methods clearly.** The engine vs "previous level" difference in mean absolute error was −0.080 mmol/L (95% CI −0.095 to −0.068).
+- **The strata are informative:**
+  - when the dose had changed, the engine's error was about half the previous level's (0.114 vs 0.243);
+  - when the dose had not changed, it was barely better (0.137 vs 0.153).
+- **It exposes miscalibration.** The engine's 90% intervals covered only 77% of measured levels, dropping to 69% after gaps of more than 90 days. The causes are missed doses, unrecorded interactions and drift larger than the engine assumes.
+  - Real data will have the same problems. Interval calibration is therefore a secondary endpoint (section 4), and the error model may need a term for adherence.
+- **It catches weak alerts.** Only 10% of the levels above 1.0 were anticipated (P > 1.0 ≥ 20%). Most were caused by the unrecorded thiazide or by drift. That is a reminder that forecasts need the events to be recorded.
+
+None of this is evidence about real patients: both the data and the misspecification are invented.
 
 ## 3. Where real individual-level data could come from
 
